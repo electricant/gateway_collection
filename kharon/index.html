@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<meta name="viewport" content="width=640, initial-scale=1">
+<head>
+<!-- favicon -->
+<link rel="icon"
+	type="image/png"
+	href="favicon.png"/>
+<!-- Fonts -->
+
+<!-- Style -->
+<style type="text/css">
+textarea {
+	font-family: monospace;
+	resize: none;
+	border: 3px solid #cccccc;
+}
+
+body {
+	background-color: #d0e2ec;
+	background-image: linear-gradient(90deg, rgba(255,255,255,.07) 50%, transparent 50%),
+	linear-gradient(90deg, rgba(255,255,255,.13) 50%, transparent 50%),
+	linear-gradient(90deg, transparent 50%, rgba(255,255,255,.17) 50%),
+	linear-gradient(90deg, transparent 50%, rgba(255,255,255,.19) 50%);
+	background-size: 13px, 29px, 37px, 53px;
+	text-align: center;
+}
+
+button {
+	background-color: #bbbbbb;
+	border: 1px solid #dddddd;
+	font-weight: bold;
+	white-space: nowrap;
+	height: 2em;
+	margin-left: 1em; /* leave some margin between buttons */
+}
+</style>
+<title>Status page</title>
+</head>
+<!-- Actual body -->
+<body>
+<center><h2><u>Device Status</u></h2></center>
+
+<p>Connection:
+<button onclick="doDevctl('connect')">Enable Connection</button>
+<button onclick="doDevctl('disconnect')">Disconnect</button></p>
+<textarea readonly rows="25" cols="80" id=log></textarea>
+
+<p>Data usage:
+<button onClick="doDevctl('reset_counters')">Reset counters</button></p>
+<textarea readonly rows="2" cols="80" id=data></textarea>
+
+<p>System:
+<button onClick="doDevctl('halt')">Shutdown</button></p>
+<textarea readonly rows="25" cols="80" id=misc></textarea>
+<!-- Javascript to interact with the device -->
+<script>
+var textarea = document.getElementById("log");
+getLog();
+getDataCount();
+getMisc();
+
+function getLog()
+{
+	var req = new XMLHttpRequest();
+	req.open("GET", "/status/connection.log", true);
+	req.onload = function (update) {
+		var text = req.responseText;
+		if(text != null) {
+			textarea.value = text;
+		} else {
+			alert("Reload failed.");
+		}
+		// (re)set timeout
+		setTimeout(getLog, 2000);
+	};
+	req.send();
+}
+function getDataCount()
+{
+	var req = new XMLHttpRequest();
+	req.open("GET", "/cgi/data.sh", true);
+	req.onload = function (setContent) {
+		var text = req.responseText;
+		if(text != null) {
+			var txtIpt = document.getElementById("data");
+			txtIpt.value = text;
+		}
+	}
+	req.send();	
+}
+function getMisc()
+{
+	var req = new XMLHttpRequest();
+	req.open("GET", "/cgi/misc.sh", true);
+	req.onload = function (setContent) {
+		var text = req.responseText;
+		if(text != null) {
+			var txtMisc = document.getElementById("misc");	
+			txtMisc.value = text;
+		}
+	}
+	req.send();
+}
+/*
+ * Submit the specified action to devctl.sh (cgi script).
+ * Upon completion reload the status page to show changes.
+ * Available actions are:
+ * connect/disconnect	- connect/disconnect the device from the internet
+ * halt 		- Shutdown
+ * reset_counters	- reset data usage counter
+ * 
+ * NOTE: no input validation is done as it is devctl's job
+ */
+function doDevctl(action)
+{
+	var req = new XMLHttpRequest();
+	// open connection asynchronously. The answer will be ignored.
+	req.open("GET", "/cgi/devctl.sh?" + action, true);
+	// when the request is complete refresh the webpage
+	req.onload = function (refresh) {
+		location.reload();
+	}
+	req.send();
+}
+</script>
+</body>
+</html>

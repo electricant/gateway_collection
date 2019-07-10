@@ -1,0 +1,14 @@
+[Unit]
+Description=Start proxy service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/connect.sh
+Restart=on-success
+RestartSec=120
+
+[Install]
+WantedBy=multi-user.target
+

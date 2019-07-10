@@ -1,0 +1,12 @@
+[Unit]
+Description=Reload or save iptables configuration
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/iptables.sh
+Restart=always
+RestartSec=10min
+
+[Install]
+WantedBy=multi-user.target
+

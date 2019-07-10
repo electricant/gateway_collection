@@ -1,0 +1,86 @@
+.graph {
+	border-width: 0 0 1px 1px;
+	border-style: solid;
+	border-color: rgba(0, 0, 0, .25);
+
+	height: 160px;
+	width: 768px; /* 24 bars * 32pixels */
+
+	position: fixed; /* was relative but didn't allow margins*/
+	white-space: nowrap;
+
+	margin-left: 32px;
+	padding-bottom: 20px;
+
+	background: rgba(0, 0, 0, .075);
+	font-size: 0;
+}
+.graph:before { /* Y-axis label */
+	display: block;
+	position: absolute;
+	right: 100%;
+	top: 48%;
+
+	content: attr(Y-label);
+	font-size: 14px;
+	text-align: center;
+	
+	-ms-transform: rotate(-90deg);
+	-webkit-transform: rotate(-90deg);
+	transform: rotate(-90deg);
+}
+.graph:after { /* X-axis label */
+	display: block;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	width: 100%;
+	margin: 1.75em 0 0 0;
+
+	content: attr(X-label);
+	font-size: 14px;
+	text-align: center;
+}
+.graph span {
+	display: inline-block;
+	margin-top: 20px; margin-left: 1px; margin-right: 1px;
+	vertical-align: bottom;
+	position: relative;
+	width: 30px;
+
+	background: #fc0;
+}
+.graph span:first-child {
+	height: 100%;
+	margin: 0;
+	width: 0;
+}
+.graph span:before { /* Bar label */
+	display: block;
+	left: 0;
+	padding: .15em 0;
+	position: absolute;
+	top: 100%;
+	width: 100%;
+
+	content: attr(bar-label);
+	font-size: 12px;
+	text-align: center;
+}
+.graph span:after { /* Bar data value */
+	bottom: 100%;
+	display: block;
+	left: 0;
+	position: absolute;
+	width: 100%;
+
+	content: attr(bar-value);
+	font-size: 12px;
+	opacity: .5;
+	text-align: center;
+}
+.now {
+	border-style: solid;
+	border-width: 2px;
+	border-color: #4c3d00;
+}

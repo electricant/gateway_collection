@@ -1,0 +1,11 @@
+[Unit]
+Description=Forward ssh to pol's server
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -CNn -R 5455:localhost:22 tunnel@ipol.gq
+ExecStartPost=/usr/bin/bash -c 'echo Subject: Remote access enabled for lilith | ssmtp <email_here>'
+
+[Install]
+WantedBy=multi-user.target
+

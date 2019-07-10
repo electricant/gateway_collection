@@ -1,0 +1,10 @@
+[Unit]
+Description=Run reflector weekly
+
+[Timer]
+OnCalendar=Sun, 5:30
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+

@@ -1,0 +1,14 @@
+[Unit]
+Description=Pacman mirrorlist update & cleanup
+Requires=network.target
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/reflector -p http -l 10 --sort rate --save /etc/pacman.d/mirrorlist
+ExecStartPost=/usr/bin/pacman -Sc
+ExecStartPost=/usr/bin/pacman-optimize
+
+[Install]
+RequiredBy=network.target
+

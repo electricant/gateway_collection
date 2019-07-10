@@ -1,0 +1,13 @@
+[Unit]
+Description=HTTP proxy service
+Wants=socks_proxy.service
+After=socks_proxy.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/delegated -vt -f -P8080 SERVER=http SOCKS=192.168.6.1:1080
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

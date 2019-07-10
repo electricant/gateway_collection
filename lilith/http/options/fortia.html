@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+
+  	<title>Autenticazione</title>
+	
+	<link rel="icon" type="image/png" href="/favicon.png">
+  	<link rel="stylesheet" href="/css/guistyle.css">
+	<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+</head>
+<body onclick="closeTooltips()">
+	<div class="titlebar" id="titlebar"></div><!-- To be filled later -->
+	<div class="wrapper-center"><div class="content">
+		<h2>Stato:
+			<div id="status" class="statusDiv unknown"></div>
+			<button id="fortiaRestart" class="restartBtn"
+				onclick="restartFortia()">Riprova autenticazione</button>
+		</h2>
+		<h2>Cambia username e password</h2>
+		<form action="/cgi/serverapi.pl" method="post">
+    		<label>Nome utente:</label>
+			<input id="user" type="text" name="user"><br>
+			<label>Password:</label>
+			<input type="password" name="pass" value="salvoculo"><br>
+    		<input type="hidden" name="action" value="chgauth">
+    		<button type="submit" class="btn-margin">Cambia</button>
+		</form>
+		<h2>Log</h2>
+		<textarea id="log" class="misc" rows="20" cols="80" disabled></textarea>
+	</div></div>
+<script>
+// Check the URL to find if an error occurred (see serverapi.pl)
+if (window.location.search === '?ENOV') {
+	setTimeout(function() {
+		alert('Il nome utente o la password inseriti non sono validi.');
+	}, 1);
+}
+// Load webpage data
+titlebarURL = 'titlebar.html';
+titlebarPut = function(data) {
+    document.getElementById('titlebar').innerHTML = data;
+    document.getElementById('pagetitle').innerHTML = 'Autenticazione';
+};
+fetchAndPut(titlebarURL, titlebarPut);
+
+statusUrl = '/cgi/fortia.sh?status';
+var statusPut = function(data) {
+    var statusId = document.getElementById('status');
+    
+    if (data === "OK") {
+        statusId.className = 'statusDiv success';
+    } else {
+        statusId.className = 'statusDiv fail';
+    }
+};
+fetchAndPut(statusUrl, statusPut);
+
+userUrl = '/cgi/serverapi.pl?action=get_username';
+var userPut = function(data) {
+	document.getElementById('user').value = data;
+};
+fetchAndPut(userUrl, userPut);
+
+var logUrl = '/cgi/get_logs.sh?fortia';
+var logPut = function(data) {
+    document.getElementById('log').value = data;
+};
+fetchAndPut(logUrl, logPut);
+
+function restartFortia() {
+	var btnId = document.getElementById('fortiaRestart');
+	
+	btnId.innerHTML = 'Attendere...';
+	btnId.disabled = true;
+
+	fetchAndPut('/cgi/fortia.sh?restart',
+		function(data) {
+			if (data == 0) {
+				window.alert('Autenticazione eseguita con successo.');
+			} else {
+				window.alert("Autenticazione fallita.\n\nLo script ha restituito:\n" + data);
+			}
+			btnId.disabled = false;
+			location.reload();
+		});
+}
+// Fetch data from the URL stored in 'what' and run the function pointed by
+// 'putFunction' passing the fetched data as a parameter
+function fetchAndPut(what, putFunction) {
+	var xhr = new XMLHttpRequest();
+    xhr.open("GET", what, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                putFunction(xhr.responseText);
+            } else {
+                console.error(xhr.statusText);
+            }
+        }
+    };
+    xhr.onerror = function (e) {console.error(xhr.statusText);};
+    xhr.send(null);
+}
+/* Show or hide some element.
+ * Parameters:
+ * e     - Event object
+ * what  - ID of the element
+ * cl    - class name to apply when shown
+ */
+function toggle(e, what, cl) {
+    var bubble = document.getElementById(what);
+
+    if (bubble.className == 'hidden') {
+        bubble.className = cl;
+    } else {
+        bubble.className = 'hidden';
+    }
+    // cancel event bubbling to close this element when the user clicks away
+    e.cancelBubble = true;
+    if (e.stopPropagation)
+        e.stopPropagation();
+}
+// Close all tooltips (called when the body is clicked)
+function closeTooltips() {
+    var menuBubble = document.getElementById('menububble');
+    
+    if (menuBubble.className != 'hidden') {
+        menuBubble.className = 'hidden';
+    }
+}
+</script>
+</body></html>

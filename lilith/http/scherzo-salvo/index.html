@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+</head>
+	<style type="text/css">
+    	body {
+        	margin: 0;
+			overflow: hidden;
+		}
+		#url_iframe {
+			height:   100%;
+            left:     0px;
+            position: absolute;
+            top:      0px;
+            width:    100%;
+        }
+	</style>
+<body>
+	 <iframe id="url_iframe" frameborder="0"></iframe>
+	<script>
+		var url = 'http://www.facebook.com';
+		
+		function reqListener () {
+			var data = this.responseText;
+			console.log(data);
+			
+			// see regex grouping
+			var title = /<title>((.?)*)<\/title>/g.exec(data)[1];
+			document.title = title;
+			
+			document.getElementById('url_iframe').src = url;
+		}
+
+		var oReq = new XMLHttpRequest();
+		oReq.onload = reqListener;
+		oReq.open("get", url, true);
+		oReq.send();	
+	</script>
+</body>
+</html>

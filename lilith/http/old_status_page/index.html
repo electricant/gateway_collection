@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=800, initial-scale=1">
+<title>Stato del dispositivo</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+body{
+	margin-top: 1em; margin-left: 1.5em; margin-right: 1.5em;
+	background: #F8F8F7;
+}
+
+.hidden {
+        display: none;
+}
+
+.statusDiv {
+	white-space: nowrap;
+	position: relative;
+	top: -1.5em;
+	left: 10em;
+	width: 2em;
+	height: 2em;
+}
+
+.statusImg {
+	position: relative;
+	display: block;
+	max-height: 100%;
+	max-width: 100%;
+	/* must be at the bottom */
+	z-index: -1;	
+}
+
+.statusLink {
+	position: relative;
+	text-decoration: none;
+	display: block;
+	height: 100%;
+	width: 100%;
+	
+	-webkit-transition-duration: 150ms;
+        -moz-transition-duration: 150ms;
+        transition-duration: 150ms;
+}
+
+.statusLink:active {
+	-webkit-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+	-moz-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+	background: rgba(0, 0, 0, 0.125);
+}
+.statusTitle {
+	height: 1.25em;
+	padding-top: 0.25em;
+	padding-bottom: 0.25em;
+}	
+</style></head>
+<body>
+<u><h1>Stato generale del dispositivo</h1></u>
+<iframe src="/menu.html" width="600px" height="50px" frameborder=0></iframe>
+
+<h2 class="statusTitle">Autenticazione:<div class="statusDiv">
+<a class="statusLink" href="fortia.html">
+<img id="authOK" class="hidden" src="/res/thumb_up.png" alt=":)"/>
+<img id="authFail" class="hidden" src="/res/thumb_down.png" alt=":("/>
+<img id="authUnknown" class="statusImg" src="/res/question_mark.png" alt="??"/>
+</a></div></h2>
+
+<h2>Client connessi:</h2>
+<iframe src="cgi/usergraph.pl" width="820px" height="240px" frameborder="0">
+</iframe>
+
+<h2>Statistiche varie:</h2>
+<iframe src="cgi/devctl.sh?misc_stats" style="margin-left:32px"
+	width="760px" height="130px" frameborder=1></iframe>
+</body>
+<script type="text/javascript">
+// check if 'fortia' is running and update the view accordingly
+if (isFortiaRunning()) {
+	document.getElementById("authOK").className = "statusImg";
+} else {
+	document.getElementById("authFail").className = "statusImg";
+}
+document.getElementById("authUnknown").className = "hidden";
+
+// Return true if the authentication service is running
+function isFortiaRunning() {
+        httpReq = new XMLHttpRequest();
+        httpReq.open("GET", "/cgi/devctl.sh?fortia_status", false);
+        httpReq.send();
+        
+        if (httpReq.responseText == 0)
+                return true;
+        else
+                return false;
+}
+</script>
+</html>

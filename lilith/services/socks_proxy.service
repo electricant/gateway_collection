@@ -1,0 +1,13 @@
+[Unit]
+Description=SOCKS proxy service
+Wants=wifi_connect.service
+After=wifi_connect.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -CNn -D 192.168.6.1:1080 tunnel@ipol.gq
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

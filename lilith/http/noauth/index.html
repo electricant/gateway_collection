@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OOPS...</title>
+<link rel="icon" href="animated_fire.gif" type="image/gif" />
+<style>
+/* fade in animation */
+@-webkit-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@-moz-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.fade-in {
+	opacity:0;  /* make things invisible upon start */
+	-webkit-animation: fadeIn ease-in 1;
+	-moz-animation: fadeIn ease-in 1;
+	animation: fadeIn ease-in 1;
+
+	-webkit-animation-fill-mode: forwards;
+	-moz-animation-fill-mode: forwards;
+	animation-fill-mode: forwards;
+
+	-webkit-animation-duration: 150ms;
+	-moz-animation-duration: 150ms;
+	animation-duration: 150ms;
+}
+/* body style: center with some margins */
+body {
+	background-image: url(background.png);
+	margin: 1% 2% auto 2%;
+	text-align: center;
+}
+/* property for hidden elements */
+.hidden {
+	display: none;
+}
+
+.button {
+	background-color:#007dc1;
+	border-width: 0;
+	outline: none;
+  	border-radius: 2px;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
+	-moz-box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
+	-webkit-box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
+	overflow: hidden;
+
+	display: inline-block;
+	color: #ffffff;
+	font-size: medium;
+	padding: 9px 16px;
+	text-shadow:0px 1px 0px #154682;
+}
+.button:hover {
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #0061a7), color-stop(1, #007dc1));
+	background:-moz-linear-gradient(top, #0061a7 5%, #007dc1 100%);
+	background:-webkit-linear-gradient(top, #0061a7 5%, #007dc1 100%);
+	background:-o-linear-gradient(top, #0061a7 5%, #007dc1 100%);
+	background:-ms-linear-gradient(top, #0061a7 5%, #007dc1 100%);
+	background:linear-gradient(to bottom, #0061a7 5%, #007dc1 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#0061a7', endColorstr='#007dc1',GradientType=0);
+	background-color:#0061a7;
+}
+.button:active {
+	position:relative;
+	top:1px;
+}
+
+.divMsg {
+	margin: auto;
+	position: absolute;
+	top: 0; left: 0; bottom: 0; right: 0;
+	text-align: left;
+	width: 14em;
+	height: 8em;
+	padding-top: 1em;
+	padding-left: 1em;
+      	padding-right: 1em;
+ 
+	background-color: #ffffff; 
+	-webkit-box-shadow: 5px 5px 15px 5px rgba(0,0,0,0.75);
+	-moz-box-shadow: 5px 5px 15px 5px rgba(0,0,0,0.75);
+	box-shadow: 5px 5px 15px 5px rgba(0,0,0,0.75);
+	border: 1px solid;
+	border-radius: 3px;
+}
+
+.divContact {
+        margin: auto;
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        text-align: left;
+        width: 14em;
+        height: 18em; 
+        padding-top: 1em;
+        padding-left: 1em;
+        padding-right: 1em;
+        
+        background-color: #dadbdf;  
+        -webkit-box-shadow: 5px 5px 15px 5px rgba(0,0,0,0.75);
+        -moz-box-shadow: 5px 5px 15px 5px rgba(0,0,0,0.75);
+        box-shadow: 5px 5px 15px 5px rgba(0,0,0,0.75);
+        border: 1px solid;
+        border-radius: 3px;
+}
+
+</style></head>
+
+<body>
+<u><h1>OOPS! Non sono autenticato.</h1></u>
+<img src="computer_fire.gif" alt="error banner"> 
+<p>Questa rete riprova l'autenticazione ogni 15 minuti. Ripassa più tardi.</p>
+<p>Se il problema persiste chiedi a Pol di sistemare la faccenda.</p>
+
+<button id="bHurry" class="button" onclick="retryAuth()">
+Ho fretta!
+</button>
+
+<div id="waitMsg" class="hidden"><center>
+<img src="loading.gif" alt="loading..." width="64" height="64">
+<p>Attendi...</p>
+</center></div>
+
+<div id="divFail" class="hidden">
+<p>Spiacente.<br>
+L'autenticazione è fallita.</p>
+<center><button class="button" onclick="closeMsg('divFail')">chiudi</button></center>
+</div>
+
+<script type="text/javascript">
+// Restart the authentication service (does not work every time)
+function retryAuth() {
+	document.getElementById("waitMsg").className = "divMsg fade-in";
+	httpReq = new XMLHttpRequest();
+    httpReq.open("GET", "/cgi/fortia.sh?restart", true);
+    httpReq.send();
+
+	setTimeout(checkRetry, 2000);
+}
+// check if the authentication service was restarted succesfully
+function checkRetry() {
+	if (isFortiaRunning() == true) {
+		location.replace("ok.html");
+	} else {
+		document.getElementById("waitMsg").className = "hidden";
+        document.getElementById("divFail").className = "divMsg fade-in";
+	}
+}
+// Return true if the authentication service is running
+function isFortiaRunning() {
+	httpReq = new XMLHttpRequest();
+	httpReq.open("GET", "/cgi/fortia.sh?status", false);
+	httpReq.send();
+	
+	if (httpReq.responseText === "OK")
+		return true;
+	else
+		return false;
+}
+// close (hide) the message box
+function closeMsg(box) {
+	document.getElementById(box).className = "hidden";
+}
+</script>
+</body>
+</html>

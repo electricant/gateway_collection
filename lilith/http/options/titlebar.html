@@ -1,0 +1,33 @@
+<!--
+ This html file defines the content of the menu bar. It is shared among all
+ the option pages so I thought it was better kept in a separate file and loaded
+ at runtime.
+
+ NOTE: There's an h1 element whose ID is 'pagetitle'. It shoud be filled with
+       the appropriate title for the page when this file is loaded
+
+ REQUIREMENTS: The 'toggle' function should be present and loaded
+               Font Awesome icon font should be present and loaded
+-->
+<div class="menubutton" onclick="toggle(event, 'menububble', 'menububble')">
+	<i class="fa fa-bars fa-2"></i>
+</div>
+<ul id="menububble" class="hidden" style="list-style-type:none">
+	<li>
+    	<a href="/options/index.html">
+			<i class="fa fa-server"></i> Opzioni proxy</a>
+	</li><li>
+    	<a href="/options/fortia.html">
+			<i class="fa fa-users"></i> Opzioni autenticazione</a>
+	</li><li>
+		<a href="/options/system.html">
+			<i class="fa fa-heartbeat"></i> Sistema</a>
+	</li><li>
+        <a href="/options/documentation.html">
+			<i class="fa fa-file-text"></i> Documentazione</a>
+    </li></ul>
+<h1 id="pagetitle"></h1>
+<div class="menu">
+	<a title="Stato del dispositivo" href="http://192.168.6.1"><i class="fa fa-line-chart fa-2"></i></a>
+	<a title="Opzioni Access Point" href="http://192.168.6.2"><i class="fa fa-wifi fa-2"></i></a>
+</div>

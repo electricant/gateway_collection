@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+
+  	<title>Stato del dispositivo</title>
+	
+	<link rel="icon" type="image/png" href="/favicon.png">
+  	<link rel="stylesheet" href="/css/guistyle.css">
+	<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+</head>
+<body>
+	<div class="titlebar">
+		<h1>Stato del dispositivo</h1>
+		<div class="menu">
+			<a title="Opzioni del dispositivo" href="http://192.168.6.1/options"><i class="fa fa-cogs fa-2"></i></a>
+			<a title="Opzioni Access Point" href="http://192.168.6.2"><i class="fa fa-wifi fa-2"></i></a>
+		</div>
+	</div>
+	<div class="wrapper-center"><div class="content">
+		<h2>Autenticazione:
+			<div id="auth" class="statusDiv unknown"></div>
+		</h2>
+		<h2>Proxy:
+        	<div id="proxy" class="statusDiv unknown"></div>
+		</h2>
+		<h2>Qualità connessione:</h2>
+		<span id="health"><i class="fa fa-cog fa-spin"></i></span>
+		<h2>Lease DHCP:</h2>
+			<div id="dhcp" class="dhcp"></div>
+		<h2>Varie:</h2>
+			<textarea disabled id="misc" class="misc" cols="80" rows="7">
+			</textarea>
+	</div></div>
+<script>
+window.onload = function() {
+	window.setTimeout(measureConnHealth('health'), 1);
+}
+
+var DHCPurl = '/cgi/serverapi.pl?action=dhcp_clients';
+var DHCPput = function(data) {
+	document.getElementById('dhcp').innerHTML = data;
+};
+fetchAndPut(DHCPurl, DHCPput);
+
+var miscUrl = '/cgi/get_logs.sh?misc';
+var miscPut = function(data) {
+	document.getElementById('misc').value = data;
+};
+fetchAndPut(miscUrl, miscPut);
+
+var authUrl = '/cgi/fortia.sh?status';
+var authPut = function(data) {
+	var authId = document.getElementById('auth');
+	
+	if (data === "OK") {
+		authId.className = 'statusDiv success';
+	} else {
+		authId.className = 'statusDiv fail';
+	}
+};
+fetchAndPut(authUrl, authPut);
+
+var proxyUrl = '/cgi/proxy.sh?status';
+var proxyPut = function(data) {
+    var proxyId = document.getElementById('proxy');
+    
+    if (data === "OK") {
+        proxyId.className = 'statusDiv success';
+    } else {
+        proxyId.className = 'statusDiv fail';
+    }
+};
+fetchAndPut(proxyUrl, proxyPut);
+
+/*
+ * Measure the connection speed by downloading an image from a known location
+ * The speed is displayed as a percentage of a target one and in Mbps.
+ * Useful as a connection health indicator. It also colorizes the result.
+ *
+ * Parameters:
+ *  id -> id of the element where the text will be put
+ */
+function measureConnHealth(id) {
+	// parameters
+	var imageAddr = "http://speedtest.ipol.gq/img-3M.jpg"; 
+	var downloadSize = 3049227; //bytes
+	var maxSpeedMbps = 6;
+	
+	var startTime, endTime;
+    var download = new Image();
+    download.onload = function () {
+        endTime = (new Date()).getTime();
+        // compute speed and health
+		var duration = (endTime - startTime) / 1000;
+        var megaBits = (downloadSize * 8) / (1024 * 1024);
+        var speedMbps = megaBits / duration;
+        var health = ((speedMbps * 100) / maxSpeedMbps).toFixed(0);
+		// display result
+		var target = document.getElementById(id);
+		target.innerHTML = health + "%" + " (" + speedMbps.toFixed(2) + "Mb/s)";
+		target.style.backgroundColor = "hsl(" + (health - 10) + ",100%,50%)";
+    }
+
+    download.onerror = function (err, msg) {
+        console.error("measureConnHealth > Error downloading " + imageAddr);
+    }
+
+    startTime = (new Date()).getTime();
+    var cacheBuster = "?n=" + startTime;
+    download.src = imageAddr + cacheBuster; // ready to go!
+}
+
+// Fetch data from the URL stored in 'what' and run the function pointed by
+// 'putFunction' passing the fetched data as a parameter
+function fetchAndPut(what, putFunction) {
+	var xhr = new XMLHttpRequest();
+    xhr.open("GET", what, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                putFunction(xhr.responseText);
+            } else {
+                console.error(xhr.statusText);
+            }
+        }
+    };
+    xhr.onerror = function (e) {console.error(xhr.statusText);};
+    xhr.send(null);
+}
+</script>
+</body></html>

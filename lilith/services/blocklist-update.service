@@ -1,0 +1,8 @@
+[Unit]
+Description=Update the blocklist
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/tpl/blocklist-update.sh
+

@@ -1,0 +1,286 @@
+body {
+	margin: 0 auto;
+	background: #F2F2F2;
+	font-family: sans-serif;
+	font-size: 18px;
+}
+
+h3 {
+	font-size: 1em;
+}
+
+.hidden {
+	display: none;
+}
+
+.content {
+	margin: auto;
+	margin-top: 5em;
+	padding-bottom: 2em;
+	max-width: 45em;
+}
+/* Used for centering and enforcing a minimum margin */
+.wrapper-center {
+	margin-left: 10%;
+	margin-right: 10%;
+}
+@media screen and (max-width: 480px) {
+	.wrapper-center {
+		margin-left: 1em;
+		margin-right: 1em;
+	}
+}
+.content h2 {
+	font-size: 22px;;
+}
+
+.titlebar {
+	background-color: rgb(0, 150, 136);
+	color: white;
+	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
+	margin: 0 auto;
+    padding-top: 0.5em; padding-bottom: 0.5em;
+	
+	position: fixed;
+	top: 0px;
+	width: 100%;
+	z-index: 1;
+}
+.titlebar h1 {
+    margin-left: 1em; margin-top: 0; margin-bottom: 0;
+	text-shadow: 1px 1px rgba(0, 0, 0, 0.5);
+	font-size: 24px;
+}
+@media screen and (max-width: 390px) {
+    .titlebar h1 {
+		width: 240px;
+	}
+}
+
+.menu {
+	position: absolute;
+	top: 0.5em;
+	right: 0;
+
+	user-select: none;
+	text-decoration: none;
+	transition-duration: 150ms;
+}
+.menu a {
+	color: white;
+	font-size: 24px;
+	text-shadow: 1px 1px rgba(0, 0, 0, 0.5);
+	margin-right: 0.5em;
+	outline: 0;
+}
+.menu a:hover,
+.menu a:active {
+	text-decoration: none;
+	color: lightgrey;
+}
+
+.statusDiv {
+	white-space: nowrap;
+	position: relative;
+	top: -1.5em;
+	left: 10em;
+	width: 2em;
+	height: 2em;
+
+	background-size: 100%;
+	z-index: -1;
+}
+
+.unknown {
+	background-image: url('/res/question_mark.png');
+}
+.success {
+	background-image: url('/res/thumb_up.png');
+}
+.fail {
+	background-image: url('/res/thumb_down.png');
+}
+
+.dhcp {
+	min-width: 700px;
+	max-width: 800px;
+}
+.dhcptable {
+	font-family: monospace;
+	font-size: 12px;
+	border-collapse: collapse;
+	border-radius: 2px;
+	background-color: white;
+	width: 100%;
+}
+.dhcptable th,
+.dhcptable td {
+	border: 1px solid black;
+	height: 2em;
+}
+.dhcptable thead {
+	font-weight: bold;
+	border-bottom: 2px solid black;
+}
+
+.misc {
+	color: black;
+	background-color: white;
+	font-family: monospace;
+	font-weight: bold;
+	border: 1px solid black;
+	border-radius: 2px;
+	padding-left: 1em;
+	padding-top: 1em;
+	resize: none;
+	white-space: pre;
+	max-width: 95%;
+}
+/* Dropdown menu */
+.menubutton {
+	float: left;
+	margin-left: 0.5em;
+	margin-right: 1em;
+	font-size: 24px;
+
+	cursor: pointer;
+	cursor: hand;
+}
+.menubutton:hover,
+.menubutton:active {
+	color: lightgrey;
+}
+.menububble {
+    position: absolute;
+	top: 2em;	
+	margin: 1em 0 1em;
+	padding-top: 1em;
+	padding-bottom: 1.5em;
+	padding-left: 1em;
+	padding-right: 1em;
+	
+	font-size: 20px;
+  	color: #000;
+  	background: #00796B;
+	box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+	
+	border-radius: 5px;
+}
+.menububble:after {
+	content: "";
+	display: block;
+	position: absolute;
+	top: -15px;
+  	/* use left to control horiziontal position */
+	bottom: auto;
+	width: 0;
+	border-width: 0 15px 15px;
+  	border-style: solid;
+  	border-color: #00796B transparent;
+	border-radius: 1px;
+}
+.menububble li {
+	margin-top: 0.5em;
+}
+.menububble a {
+    color: white;
+    text-shadow: 1px 1px rgba(0, 0, 0, 0.5);
+    outline: 0;
+	text-decoration: none;
+}
+.menububble a:hover,
+.menububble a:active {
+    text-decoration: none;
+    color: lightgrey;
+}
+
+.restartBtn {
+	position: relative;
+	top: -2em;
+}
+
+.unlock_table, .unlock_table tr {
+	font-size: 16px;
+	border-collapse: collapse;
+/*	border-bottom: 1px solid grey;*/
+	width: 24em;
+	max-width: 100%;
+	
+}
+.unlock_table button {
+	width: 8em;
+	height: 2.25em;
+}
+.unlock_table .fa-plus {
+	color: green;
+	font-size: 18px;
+	margin-right: 0.5em;
+}
+.unlock_table .fa-times {
+	color: #D91E18;
+	font-size: 18px;
+	margin-right: 0.5em;
+}
+.unlock_table input[type="text"] {
+ 	background-color: inherit;
+	font-size: 16px;
+	margin: 0.5em;
+	padding: 0.25em;
+	
+	appearance: none;
+	box-shadow: none;
+
+	border: none;
+    border-bottom: 1px solid grey;
+	border-radius: none;
+
+    transition: box-shadow 0.3s, border 0.3s;
+}
+.unlock_table input[type="text"]:focus,
+.unlock_table input[type="text"].focus {
+  	outline: none;
+	border: none;
+	background-color: white;
+	border-radius: 2px;
+	box-shadow: 1px 1px 5px 2px #969696;
+	opacity: 1;
+}
+.unlock_table input[readonly] {
+    color: #606060;
+    background-color: inherit !important;
+    box-shadow: none !important;
+	border-bottom: 1px solid grey;
+}
+::-webkit-input-placeholder {color: black; opacity: 0.9;}
+:-moz-placeholder           {color: black; opacity: 0.9;}
+::-moz-placeholder          {color: black; opacity: 0.9;}
+:-ms-input-placeholder      {color: black; opacity: 0.9;}
+@media screen and (max-width: 480px) {
+    .unlock_table {
+        text-align: center;
+    }
+	.unlock_table input {
+		margin-top: 1em !important;
+		width: 80%;
+		text-align: center;
+	}
+}
+.infobutton {
+	font-size: 20px;
+	margin-left: 1em;
+	padding-top: 0.2em;
+}
+/* Display input fields aligned */
+label {
+	display: inline-block;
+	width: 8em;
+	text-align: left;
+}
+/* Have a bit of margin around buttons */
+.btn-margin {
+	margin-top: 1em;
+}
+
+code {
+	background-color: #FFF59D;
+}

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+
+  	<title>Opzioni proxy</title>
+	
+	<link rel="icon" type="image/png" href="/favicon.png">
+  	<link rel="stylesheet" href="/css/guistyle.css">
+	<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+</head>
+<body onclick="closeTooltips()">
+	<div class="titlebar" id="titlebar"></div><!-- to be filled later -->
+	<div class="wrapper-center"><div class="content">
+		<h2>Stato:
+			<div id="proxy" class="statusDiv unknown"></div>
+			<button id="proxyRestart" class="restartBtn"
+				onclick="restartProxy()">Riavvia proxy</button>
+			</h2>
+		<h2>Domini sbloccati:
+			<button class="infobutton" onclick="toggle(event, 'domainTip', '')">
+				<i class="fa fa-info-circle"></i>
+			</button>
+		</h2>
+		<div id="domainTip" class="hidden"  style="max-width:45em;">
+			<p>Un nome di dominio è costituito da una serie di stringhe separate
+			da punti, ad esempio www.example.com. La parte più importante è la
+			prima partendo da destra, detta dominio di primo livello (o TLD,
+			Top Level Domain), per esempio .org, .it, .com.</p>
+			<p>Un dominio di secondo livello consiste di due parti, per esempio
+			example.com. Ogni ulteriore elemento seguito da un punto specifica
+			un sottolivello: www.example.org è un dominio di terzo livello,
+			some.other.stuff.example.com è di quinto livello e così via.</p>
+			<p>Il proprietario di un dominio di secondo livello può allocare
+			liberamente vari sottodomini. Si consiglia pertanto l'inserimento
+			nei seguenti campi di domini di secondo o al più terzo livello in
+			modo da sbloccare correttamente l'intero sito web.</p>
+		</div>
+		<table class="unlock_table" id="unlock"></table>
+		<h2>Log:</h2>
+		<textarea id="log" class="misc" rows="20" cols="80" disabled></textarea>
+	</div></div>
+<script>
+// Check the URL to find if an error occurred (see serverapi.pl)
+if (window.location.search === '?ENOV') {
+	setTimeout(function() {
+		alert('Il dominio inserito non è valido.');
+	}, 1);
+} else if (window.location.search === '?EEMP') {
+	setTimeout(function() {
+		alert('Non hai inserito nessun dominio.');
+	}, 1);
+} else if (window.location.search === '?EIDX') {
+	setTimeout(function() {
+		alert('Impossibile eliminare il dominio selezionato.');
+	 }, 1);
+}
+// Load webpage data
+titlebarURL = 'titlebar.html';
+titlebarPut = function(data) {
+	document.getElementById('titlebar').innerHTML = data;
+	document.getElementById('pagetitle').innerHTML = 'Opzioni proxy';
+};
+fetchAndPut(titlebarURL, titlebarPut);
+
+proxyUrl = '/cgi/proxy.sh?status';
+var proxyPut = function(data) {
+    var proxyId = document.getElementById('proxy');
+    
+    if (data === "OK") {
+        proxyId.className = 'statusDiv success';
+    } else {
+        proxyId.className = 'statusDiv fail';
+    }
+};
+fetchAndPut(proxyUrl, proxyPut);
+
+var logUrl = '/cgi/get_logs.sh?proxy';
+var logPut = function(data) {
+    document.getElementById('log').value = data;
+};
+fetchAndPut(logUrl, logPut);
+
+var unlockUrl = '/cgi/serverapi.pl?action=get_unlocked';
+var unlockPut = function(data) {
+    document.getElementById('unlock').innerHTML = data;
+};
+fetchAndPut(unlockUrl, unlockPut);
+
+// Call the script to reload the proxy
+function restartProxy() {
+	var btnId = document.getElementById('proxyRestart');
+	
+	btnId.innerHTML = 'Attendere...';
+	btnId.disabled = true;
+
+	fetchAndPut('/cgi/proxy.sh?restart',
+		function(data) {
+			if (data == 0) {
+				window.alert('Proxy riavviato con successo.');
+			} else {
+				window.alert("Riavvio fallito.\n\nLo script ha restituito:\n" +
+					data);
+			}
+			btnId.disabled = false;
+			location.reload();
+		});
+}
+
+// Fetch data from the URL stored in 'what' and run the function pointed by
+// 'putFunction' passing the fetched data as a parameter
+function fetchAndPut(what, putFunction) {
+	var xhr = new XMLHttpRequest();
+    xhr.open("GET", what, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                putFunction(xhr.responseText);
+            } else {
+                console.error(xhr.statusText);
+            }
+        }
+    };
+    xhr.onerror = function (e) {console.error(xhr.statusText);};
+    xhr.send(null);
+}
+/* Show or hide some element.
+ * Parameters:
+ * e     - Event object
+ * what  - ID of the element
+ * cl    - class name to apply when shown
+ */
+function toggle(e, what, cl) {
+    var bubble = document.getElementById(what);
+
+    if (bubble.className == 'hidden') {
+        bubble.className = cl;
+    } else {
+        bubble.className = 'hidden';
+    }
+    // cancel event bubbling to close this element when the user clicks away
+    e.cancelBubble = true;
+    if (e.stopPropagation)
+        e.stopPropagation();
+}
+// Close all tooltips (called when the body is clicked)
+function closeTooltips() {
+	var menuBubble = document.getElementById('menububble');
+	
+	if (menuBubble.className != 'hidden') {
+		menuBubble.className = 'hidden';
+	}
+}
+</script>
+</body></html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+
+  	<title>Sistema</title>
+	
+	<link rel="icon" type="image/png" href="/favicon.png">
+  	<link rel="stylesheet" href="/css/guistyle.css">
+	<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+</head>
+<body onclick="closeTooltips()">
+	<div class="titlebar" id="titlebar"></div><!-- filled later -->
+	<div class="wrapper-center"><div class="content">
+	<h2>Riavvio e spegnimento</h2>
+	<button onclick="rebootDevice()">Riavvia il sistema</button>
+	<button onclick="shutdownDevice()">Arresta il sistema</button>
+	<h2>Help remoto
+		<button class="infobutton" onclick="toggle(event, 'helpTip', '')">
+			<i class="fa fa-info-circle"></i>
+		</button>
+	</h2>
+	<div id="helpTip" class="hidden"  style="max-width:45em;">
+		<p>Il bottone seguente attiva o disattiva l'help remoto.</p>
+		<p>Ciò significa che Pol può entrare nel dispositivo per sistemare cose ovunque egli si trovi.</p>
+		<p>Il presente servizio occupa una  <a href="https://it.wikipedia.org/wiki/Porta_%28reti%29">porta</a> sul server di Paolo. Tale porta è utilizzata per l'help remoto di altri computer. Si prega pertanto di disattivare il servizio quando non è più utile.</p>
+	</div>
+	<button id="helptoggle" onclick="toggleRemoteHelp()" disabled>
+		Attendi...</button>
+	<h2>Stato</h2>
+	<textarea id="misclog" class="misc" rows="7" cols="80" disabled></textarea>
+	<h2>Timer</h2>
+	<textarea id="tmrlog" class="misc" rows="12" cols="80" disabled></textarea>
+	</div></div>
+<script>
+// Load webpage data
+titlebarURL = 'titlebar.html';
+titlebarPut = function(data) {
+    document.getElementById('titlebar').innerHTML = data;
+    document.getElementById('pagetitle').innerHTML = 'Sistema';
+};
+fetchAndPut(titlebarURL, titlebarPut);
+
+var miscUrl = '/cgi/get_logs.sh?misc';
+var miscPut = function(data) {
+    document.getElementById('misclog').value = data;
+};
+fetchAndPut(miscUrl, miscPut);
+
+var tmrUrl = '/cgi/get_logs.sh?timers';
+var tmrPut = function(data) {
+    document.getElementById('tmrlog').value = data;
+};
+fetchAndPut(tmrUrl, tmrPut);
+
+var remoteHelpURL = '/cgi/remote_help.sh?status';
+var remoteHelpPut = function(data) {
+	var elem = document.getElementById('helptoggle');
+    elem.disabled = false;
+
+	if (data === "RUNNING") {
+		elem.innerHTML = 'Ferma aiuto remoto';
+	} else {
+		elem.innerHTML = 'Attiva aiuto remoto';
+	}
+};
+fetchAndPut(remoteHelpURL, remoteHelpPut);
+
+// Actions triggered by the click of some button
+function rebootDevice() {
+	fetchAndPut('/cgi/devctl.sh?reboot',
+		function(data) {
+			window.alert(data);
+	});
+}
+
+function shutdownDevice() {
+    fetchAndPut('/cgi/devctl.sh?shutdown',
+        function(data) {
+            window.alert(data);
+    });
+}
+
+function toggleRemoteHelp() {
+	var elem = document.getElementById('helptoggle');
+	elem.disabled = true;
+
+	if (elem.innerHTML === 'Ferma aiuto remoto') {
+		console.log("stopping");
+		fetchAndPut('/cgi/remote_help.sh?stop', 
+			function (data) { location.reload(); });
+	} else {
+		console.log("starting");
+		fetchAndPut('/cgi/remote_help.sh?start',
+			function (data) { location.reload(); });
+	}
+	elem.innerHTML = 'Attendi...';
+}
+
+// Fetch data from the URL stored in 'what' and run the function pointed by
+// 'putFunction' passing the fetched data as a parameter
+function fetchAndPut(what, putFunction) {
+	var xhr = new XMLHttpRequest();
+    xhr.open("GET", what, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                putFunction(xhr.responseText);
+            } else {
+                console.error(xhr.statusText);
+            }
+        }
+    };
+    xhr.onerror = function (e) {console.error(xhr.statusText);};
+    xhr.send(null);
+}
+/* Show or hide some element.
+ * Parameters:
+ * e     - Event object
+ * what  - ID of the element
+ * cl    - class name to apply when shown
+ */
+function toggle(e, what, cl) {
+    var bubble = document.getElementById(what);
+
+    if (bubble.className == 'hidden') {
+        bubble.className = cl;
+    } else {
+        bubble.className = 'hidden';
+    }
+    // cancel event bubbling to close this element when the user clicks away
+    e.cancelBubble = true;
+    if (e.stopPropagation)
+        e.stopPropagation();
+}
+// Close all tooltips (called when the body is clicked)
+function closeTooltips() {
+    var menuBubble = document.getElementById('menububble');
+    
+    if (menuBubble.className != 'hidden') {
+        menuBubble.className = 'hidden';
+    }
+}
+</script>
+</body></html>
