@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="Hermes">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>Hermes</title>
+  
+	<link rel="icon" href="hermes.png" type="image/x-icon"/>
+
+	<!-- Load pure CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+
+	<!-- Use Font Awesom for fancy icons -->
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+
+	<!-- Local CSS for tweaks -->
+	<link rel="stylesheet" href="css/style.css">
+	
+	<!-- JavaScript stuff -->
+	<script language="javascript">
+		/* Get the status of various services and check everything is ok
+		   if so update the webpage accordingly
+		*/
+		function updateStatusDisplay(generalStatus) {
+			var tltText = "";
+
+			if (generalStatus.pdnsd == 0) {
+				tltText = "DNS: Active";
+			} else {
+				tltText = "DNS: Inactive";
+			}
+			tltText += "<br>";
+			if (generalStatus.dhcpd == 0) {
+				tltText += "DHCP: Active";
+			} else {
+				tltText += "DHCP: Inactive";
+			}
+			tltText += "<br>";
+			if (generalStatus.traffic_shaping == 0) {
+				tltText += "Traffic Shaping: Active";
+			} else {
+				tltText += "Traffic Shaping: Inactive";
+			}
+			tltText += "<br>";
+			if (generalStatus.iptables == 0) {
+				tltText += "Iptables: Active";
+			} else {
+				tltText += "Iptables: Inactive";
+			}
+			
+			document.getElementById("statusTooltip").innerHTML = tltText;
+			
+			statusIco = document.getElementById("statusIcon");
+			parentBaseClass = "pure-button tooltip";
+
+			if (generalStatus.overall == 0) { 
+				// great! Everything is working!
+				statusIco.className = "fa fa-check";
+				statusIco.parentElement.className =
+					parentBaseClass + " button-success";
+			} else {
+				// (* fail trumpet *) something is wrong
+				statusIco.className = "fa fa-times";
+				statusIco.parentElement.className =
+					parentBaseClass + " button-error";
+			}
+		}
+	
+		function queryGeneralStatus() {
+			const HTTP = new XMLHttpRequest();
+			const URL = '/cgi/general_status.sh';
+			HTTP.open("GET", URL);
+			HTTP.send();
+
+			HTTP.onreadystatechange = function() {
+				console.log("GET " + URL + " " + HTTP.statusText);
+				
+				if(this.readyState == 4 && this.status == 200) {
+					generalStatus = JSON.parse(HTTP.responseText);
+					updateStatusDisplay(generalStatus);
+				}
+			}
+		}
+
+		/* Run me when loading */
+		queryGeneralStatus();
+	</script>
+</head>
+<body>
+	<h1>Status for Hermes</h1>
+
+	<h2>General</h2>
+	<button class="pure-button tooltip">
+		<i id="statusIcon" class="fa fa-spinner"></i>
+		<span id="statusTooltip" class="tooltiptext">Loading...</span>
+	</button>
+
+	<h2>Internet Connection</h2>
+		<img src="/cgi/vnstat.pl?0-hg" alt="Hourly graph">
+		<img src="/cgi/vnstat.pl?0-s" alt="Summary">
+		<img src="/cgi/vnstat.pl?0-t" alt="Top 10 days">
+
+	<!-- SUPERSEDED
+	<h2>DHCP server</h2>
+		<p><iframe class="singleline" src="/cgi/dhcpd_ctl.sh"></iframe>
+		</p>
+	
+	<h2>DNS server</h2>
+		<p><iframe class="singleline" src="/cgi/pdnsd_ctl.sh"></iframe>
+		</p>
+	-->
+
+	<h2>Miscellaneous</h2>
+		<p><iframe class="termsize" src="/cgi/misc.sh"></iframe></p>
+</body>
+</html>

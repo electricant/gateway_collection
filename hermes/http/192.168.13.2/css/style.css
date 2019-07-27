@@ -1,0 +1,72 @@
+/*
+ * Appearance tweaks
+ */
+body {
+	line-height: 1.4;
+	margin: 40px auto;
+	max-width: 80em;
+	font-size: 18px;
+	padding: 0 10px;
+}
+img {
+	display: block;
+	margin-top: 0.5em;
+	border: 0;
+}
+iframe.singleline {
+	height: 2em;
+}
+iframe.termsize {
+	height: 25em;
+	width: 80ex;
+}
+
+/* 
+ * Create beautiful tooltips 
+ */
+.tooltip {
+	position: relative;
+	display: inline-block;
+}
+.tooltip .tooltiptext {
+	visibility: hidden;
+	background-color: black;
+	color: #fff;
+	text-align: left;
+	border-radius: 3px;
+	padding: 5px;
+
+	/* Position the tooltip */
+	position: absolute;
+	z-index: 1;
+	top: -5px;
+	left:105%;
+}
+.tooltip:hover .tooltiptext {
+	visibility: visible;
+}
+
+/*
+ * Extend pure CSS buttons to get error and success buttons 
+ */
+.button-success,
+.button-error {
+	color: white;
+	border-radius: 4px;
+	text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+.button-success {
+	background: rgb(28, 184, 65); /* this is a green */
+}
+.button-error {
+	background: rgb(202, 60, 60); /* this is a maroon */
+}
+
+/*
+ * Rotating animation for font awesome spinner
+ */
+.fa-spinner {
+	animation: rotation 2s linear infinite;
+}
+@keyframes rotation { 100% { transform: rotate(360deg); } }
+

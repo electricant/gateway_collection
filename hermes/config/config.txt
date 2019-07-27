@@ -1,0 +1,23 @@
+# See /boot/overlays/README for all available options
+initramfs initramfs-linux.img followkernel
+
+# Give the least possible amount of memory for the GPU
+gpu_mem=16
+
+# Overclock options
+force_turbo=1
+initial_turbo=60
+avoid_pwm_pll=1
+
+# Frequencies
+arm_freq=900
+gpu_freq=250
+core_freq=360
+sdram_freq=450
+over_voltage=1
+over_voltage_sdram=1
+
+arm_freq_min=600
+core_freq_min=200
+sdram_freq_min=300
+over_voltage_min=-2

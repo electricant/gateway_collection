@@ -32,3 +32,11 @@ Samael.
 There's some more detailed description which sadly is in italian. Open an issue
 to let me know if you are interested in a translation or a pull request if you
 happen to transalate it yourself.
+
+## Hermes
+Another raspberrypi-based gateway. This time the connection from a 4G modem is
+shared via the LAN port and then into a WiFi router. The name cames from the
+quickest of the greek gods. Hermes's role was to deliver messages as fast as
+possible. The poor old raspberry Pi was showing sign of its age so it was 
+overclocked to 900MHz. Moreover to keep interactivity high some simple QoS rules
+have been configured.

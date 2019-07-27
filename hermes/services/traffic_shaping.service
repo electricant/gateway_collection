@@ -1,0 +1,13 @@
+[Unit]
+Description=Setup traffic shaping
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/alarm/traffic_shaping.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
