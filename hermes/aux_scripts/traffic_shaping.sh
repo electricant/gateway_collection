@@ -8,7 +8,7 @@ SPEED_DOWN="20Mbit"
 BURST_DOWN="32kb"
 SPEED_UP="18Mbit"
 BURST_UP="24kb"
-LATENCY="100ms"
+LATENCY="90ms"
 
 # see https://linux.die.net/man/8/tc-prio
 PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"

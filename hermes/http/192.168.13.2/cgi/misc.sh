@@ -27,9 +27,9 @@ echo #empty
 echo --------------------
 echo " Traffic Shaping:"
 echo --------------------
-echo eth0:
-tc -s -d qdisc ls dev eth0
-echo eth1:
-tc -s -d qdisc ls dev eth1
+echo "* DOWNLOAD (eth0)":
+tc -s -d qdisc ls dev eth0 | awk '{print "\t",$0;}'
+echo "* UPLOAD (eth1)":
+tc -s -d qdisc ls dev eth1 | awk '{print "\t",$0;}'
 
 exit 0
