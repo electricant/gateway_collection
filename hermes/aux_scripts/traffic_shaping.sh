@@ -4,11 +4,11 @@
 # The classes are simple as I'm am intrested to keep interactivity high by
 # limiting the maximum throughput
 
-SPEED_DOWN="20Mbit"
-BURST_DOWN="32kb"
+SPEED_DOWN="24Mbit"
+BURST_DOWN="64kb"
 SPEED_UP="18Mbit"
-BURST_UP="24kb"
-LATENCY="90ms"
+BURST_UP="16kb"
+LATENCY="100ms"
 
 # see https://linux.die.net/man/8/tc-prio
 PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"

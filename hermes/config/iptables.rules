@@ -38,12 +38,12 @@ COMMIT
 :INPUT ACCEPT [74:4903]
 :OUTPUT ACCEPT [60:3627]
 :POSTROUTING ACCEPT [60:3627]
--A PREROUTING -p tcp -m tcp --dport 53 -j REDIRECT
--A PREROUTING -p udp -m udp --dport 53 -j REDIRECT
--A POSTROUTING -m owner --uid-owner 184 -j RETURN
--A POSTROUTING -p udp -m udp --dport 53 -j SNAT --to-source 127.0.0.1
--A POSTROUTING -p tcp -m tcp --dport 53 -j SNAT --to-source 127.0.0.1
--A POSTROUTING -o ppp0 -j MASQUERADE
+#-A PREROUTING -p tcp -m tcp --dport 53 -j REDIRECT
+#-A PREROUTING -p udp -m udp --dport 53 -j REDIRECT
+#-A POSTROUTING -m owner --uid-owner 184 -j RETURN
+#-A POSTROUTING -p udp -m udp --dport 53 -j SNAT --to-source 127.0.0.1
+#-A POSTROUTING -p tcp -m tcp --dport 53 -j SNAT --to-source 127.0.0.1
+#-A POSTROUTING -o ppp0 -j MASQUERADE
 -A POSTROUTING -o eth1 -j MASQUERADE
 COMMIT
 # Completed on Sun Sep 15 19:12:51 2019
