@@ -8,6 +8,7 @@ get-all:
 
 	# Getting various auxiliary scripits...
 	@scp $(HOST):/home/alarm/traffic_shaping.sh aux_scripts/
+	@scp $(HOST):/home/alarm/blocklist-update.sh aux_scripts/
 
 	# Getting service files...
 	@scp $(HOST):/usr/lib/systemd/system/traffic_shaping.service services/
@@ -18,3 +19,4 @@ get-all:
 	@scp $(HOST):/etc/vnstat.conf config/
 	@scp $(HOST):/etc/dhcpd.conf config/
 	@scp $(HOST):/boot/config.txt config/
+	@scp $(HOST):/etc/unbound/unbound.conf config/
