@@ -10,8 +10,9 @@ PATH="/bin:/usr/bin:/usr/ucb:/usr/opt/bin"
 
 # Check for services and save their status in a variable.
 # When $? is 0 then the service is active. Otherwhise it is not active.
-systemctl is-active --quiet pdnsd
-pdnsd_status=$?
+#systemctl is-active --quiet pdnsd
+systemctl is-active --quiet unbound
+dns_status=$?
 systemctl is-active --quiet dhcpd4
 dhcpd_status=$?
 systemctl is-active --quiet traffic_shaping
@@ -26,7 +27,7 @@ overall_status=$((pdnsd_status + dhcpd_status + traffic_shaping_status \
 # Output the data
 echo "Content-type: application/json; charset=utf-8"
 echo ""
-echo "{\"overall\" : $overall_status, \"pdnsd\" : $pdnsd_status," \
+echo "{\"overall\" : $overall_status, \"dns_server\" : $dns_status," \
      "\"dhcpd\" : $dhcpd_status, \"iptables\" : $iptables_status," \
      "\"traffic_shaping\" : $traffic_shaping_status}"
 

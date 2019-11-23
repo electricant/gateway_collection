@@ -26,10 +26,10 @@
 		function updateStatusDisplay(generalStatus) {
 			var tltText = "";
 
-			if (generalStatus.pdnsd == 0) {
-				tltText = "DNS: Active";
+			if (generalStatus.dns_server == 0) {
+				tltText = "DNS server: Active";
 			} else {
-				tltText = "DNS: Inactive";
+				tltText = "DNS server: Inactive";
 			}
 			tltText += "<br>";
 			if (generalStatus.dhcpd == 0) {
