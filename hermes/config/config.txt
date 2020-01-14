@@ -10,11 +10,11 @@ initial_turbo=60
 avoid_pwm_pll=1
 
 # Frequencies
-arm_freq=900
+arm_freq=1000
 gpu_freq=250
-core_freq=360
+core_freq=400
 sdram_freq=450
-over_voltage=1
+over_voltage=3
 over_voltage_sdram=1
 
 arm_freq_min=600
