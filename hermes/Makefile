@@ -20,3 +20,4 @@ get-all:
 	@scp $(HOST):/etc/dhcpd.conf config/
 	@scp $(HOST):/boot/config.txt config/
 	@scp $(HOST):/etc/unbound/unbound.conf config/
+	@scp $(HOST):/etc/ntp.conf config/
