@@ -8,11 +8,12 @@ set -e # Exit when any command fails
 # Lists to pull the hosts from
 SOURCES=("http://www.malwaredomainlist.com/hostslist/hosts.txt"
          "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Dead/hosts"
-	 "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts"
-	 "https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts"
-	 "https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt"
-	 "https://someonewhocares.org/hosts/hosts"
-	 )
+	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts"
+	   "https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts"
+	   "https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt"
+#	   "https://someonewhocares.org/hosts/hosts"
+	   "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts;showintro=0"
+	  )
 
 # Temporary file where the hosts are stored
 TEMPFILE=/tmp/rawlist.tmp
