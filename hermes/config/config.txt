@@ -14,7 +14,7 @@ arm_freq=1000
 gpu_freq=250
 core_freq=400
 sdram_freq=450
-over_voltage=3
+over_voltage=4
 over_voltage_sdram=1
 
 arm_freq_min=600
