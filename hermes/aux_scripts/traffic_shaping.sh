@@ -4,19 +4,23 @@
 # The classes are simple as I'm am intrested to keep interactivity high by
 # limiting the maximum throughput
 
-SPEED_DOWN="25Mbit"
-BURST_DOWN="128kb"
+# exit when any command fails
+set -e
+
+# Speed and latency definitions
+SPEED_DOWN="28Mbit"
+BURST_DOWN="256kbit" # 32k byte
 LATENCY_DOWN="100ms"
 SPEED_UP="18Mbit"
-BURST_UP="16kb"
+BURST_UP="128kbit" # 16k Byte
 LATENCY_UP="75ms"
 
 # see https://linux.die.net/man/8/tc-prio
 PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"
 
-# Reset interfaces just to be safe
-tc qdisc del dev eth0 root
-tc qdisc del dev eth1 root
+# Reset interfaces just to be safe (ignoring errors)
+tc qdisc del dev eth0 root || true
+tc qdisc del dev eth1 root || true
 
 # Download is the data going out from eth0
 # Use prio classful queue with two bands
