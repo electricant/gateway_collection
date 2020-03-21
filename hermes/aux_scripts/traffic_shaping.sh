@@ -11,9 +11,9 @@ set -e
 SPEED_DOWN="28Mbit"
 BURST_DOWN="256kbit" # 32k byte
 LATENCY_DOWN="100ms"
-SPEED_UP="18Mbit"
+SPEED_UP="15Mbit"
 BURST_UP="128kbit" # 16k Byte
-LATENCY_UP="75ms"
+LATENCY_UP="70ms"
 
 # see https://linux.die.net/man/8/tc-prio
 PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"
@@ -46,3 +46,5 @@ iptables -t mangle -A POSTROUTING -p tcp \
 	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
 	-j MARK --set-mark 10
 iptables -t mangle -A POSTROUTING -p udp -j MARK --set-mark 10
+# SSH is also high priority
+iptables -t mangle -A POSTROUTING -p tcp --dport 22 -j MARK --set-mark 10
