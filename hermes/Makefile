@@ -1,6 +1,6 @@
 #
 # Makefile to fetch files from kharon
-HOST=root@192.168.13.2
+HOST=root@192.168.8.2
 
 get-all:
 	# Getting HTTP gui files...
@@ -21,3 +21,4 @@ get-all:
 	@scp $(HOST):/boot/config.txt config/
 	@scp $(HOST):/etc/unbound/unbound.conf config/
 	@scp $(HOST):/etc/ntp.conf config/
+	@scp $(HOST):/etc/sysctl.d/* config/sysctl/

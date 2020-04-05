@@ -8,9 +8,9 @@
 set -e
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="36Mbit"
-SPEED_UP="15Mbit"
-RTT="60ms"
+SPEED_DOWN="20Mbit"
+SPEED_UP="16Mbit"
+RTT="50ms"
 
 # see https://linux.die.net/man/8/tc-prio
 PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"
@@ -25,7 +25,7 @@ tc qdisc del dev eth1 root || true
 tc qdisc add dev eth0 root handle 1: prio bands 2 priomap $PRIOMAP
 tc qdisc add dev eth0 parent 1:1 handle 10: codel
 tc qdisc add dev eth0 parent 1:2 handle 20: cake bandwidth $SPEED_DOWN \
-	rtt $RTT nat ingress ethernet
+	rtt $RTT ingress ethernet ether-vlan
 # send packets marked as 10 to the pfifo for low latency
 tc filter add dev eth0 parent 1:0 protocol ip prio 10 handle 10 fw flowid 1:1
 
@@ -34,7 +34,7 @@ tc filter add dev eth0 parent 1:0 protocol ip prio 10 handle 10 fw flowid 1:1
 tc qdisc add dev eth1 root handle 1: prio bands 2 priomap $PRIOMAP
 tc qdisc add dev eth1 parent 1:1 handle 10: codel
 tc qdisc add dev eth1 parent 1:2 handle 20: cake bandwidth $SPEED_UP \
-	rtt $RTT nat egress ethernet
+	rtt $RTT egress ethernet ether-vlan
 # send packets marked as 10 to the pfifo for low latency
 tc filter add dev eth1 parent 1:0 protocol ip prio 10 handle 10 fw flowid 1:1
 
@@ -56,15 +56,16 @@ iptables -t mangle -A POSTROUTING -p tcp \
 iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 192.168.0.0/16 \
 	-j NO_SHAPE
 # DNS requests to/from this host
-iptables -t mangle -A POSTROUTING -p tcp -s 192.168.13.2 --dport 53 -j NO_SHAPE
-iptables -t mangle -A POSTROUTING -p tcp -d 192.168.13.2 --sport 53 -j NO_SHAPE
-iptables -t mangle -A POSTROUTING -p udp -s 192.168.13.2 --dport 53 -j NO_SHAPE
-iptables -t mangle -A POSTROUTING -p udp -d 192.168.13.2 --sport 53 -j NO_SHAPE
+#iptables -t mangle -A POSTROUTING -p tcp -s 192.168.13.2 --dport 53 -j NO_SHAPE
+#iptables -t mangle -A POSTROUTING -p tcp -d 192.168.13.2 --sport 53 -j NO_SHAPE
+#iptables -t mangle -A POSTROUTING -p udp -s 192.168.13.2 --dport 53 -j NO_SHAPE
+#iptables -t mangle -A POSTROUTING -p udp -d 192.168.13.2 --sport 53 -j NO_SHAPE
+iptables -t mangle -A POSTROUTING -m owner --uid-owner unbound -j NO_SHAPE
 # SSH connections
 iptables -t mangle -A POSTROUTING -p tcp --dport 22 -j NO_SHAPE
 iptables -t mangle -A POSTROUTING -p tcp --sport 22 -j NO_SHAPE
-
-#iptables -t mangle -A POSTROUTING -p udp -j MARK --set-mark 10
+# UDP packets also do not like being dropped
+#iptables -t mangle -A POSTROUTING -p udp -j NO_SHAPE
 
 # Bulk transfers do not require low latency and slow everything down.
 # Mark everything as CS1 and let CAKE deal with them
@@ -84,4 +85,9 @@ iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 80,443 \
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
 	-m connbytes --connbytes $((3*1024*1024)) --connbytes-mode bytes \
 	--connbytes-dir both -j BULK
+# Oddball HTTP ports are marked directly as bulk
+iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 591,8000,8008,8080 \
+     	-j BULK
+iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 591,8000,8008,8080 \
+     	-j BULK
 
