@@ -22,3 +22,4 @@ get-all:
 	@scp $(HOST):/etc/unbound/unbound.conf config/
 	@scp $(HOST):/etc/ntp.conf config/
 	@scp $(HOST):/etc/sysctl.d/* config/sysctl/
+	@scp $(HOST):/etc/systemd/network/* config/systemd-networkd/
