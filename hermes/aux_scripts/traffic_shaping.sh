@@ -8,8 +8,8 @@
 set -e
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="20Mbit"
-SPEED_UP="16Mbit"
+SPEED_DOWN="12Mbit"
+SPEED_UP="10Mbit"
 RTT="50ms"
 
 # see https://linux.die.net/man/8/tc-prio
@@ -80,10 +80,10 @@ iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 20,21,989,990 \
      	-j BULK
 # Long HTTP(S) connections
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 80,443 \
-	-m connbytes --connbytes $((3*1024*1024)) --connbytes-mode bytes \
+	-m connbytes --connbytes $((2*1024*1024)) --connbytes-mode bytes \
 	--connbytes-dir both -j BULK
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
-	-m connbytes --connbytes $((3*1024*1024)) --connbytes-mode bytes \
+	-m connbytes --connbytes $((2*1024*1024)) --connbytes-mode bytes \
 	--connbytes-dir both -j BULK
 # Oddball HTTP ports are marked directly as bulk
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 591,8000,8008,8080 \
