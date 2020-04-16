@@ -9,7 +9,7 @@
 # released under the GNU General Public License
 
 
-my $servername = '192.168.13.2';
+my $servername = '192.168.8.4';
 my $scriptname = 'vnstat.pl';
 
 # temporary directory where to store the images

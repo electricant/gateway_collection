@@ -1,5 +1,5 @@
 /*
- * Appearance tweaks
+ * Global appearance tweaks
  */
 body {
 	line-height: 1.4;
@@ -20,7 +20,6 @@ iframe.termsize {
 	height: 25em;
 	width: 80ex;
 }
-
 /* 
  * Create beautiful tooltips 
  */
@@ -45,7 +44,6 @@ iframe.termsize {
 .tooltip:hover .tooltiptext {
 	visibility: visible;
 }
-
 /*
  * Extend pure CSS buttons to get error and success buttons 
  */
@@ -61,7 +59,6 @@ iframe.termsize {
 .button-error {
 	background: rgb(202, 60, 60); /* this is a maroon */
 }
-
 /*
  * Rotating animation for font awesome spinner
  */
@@ -69,4 +66,33 @@ iframe.termsize {
 	animation: rotation 2s linear infinite;
 }
 @keyframes rotation { 100% { transform: rotate(360deg); } }
-
+/*
+ * More pureCSS extesions using custom color palette
+ * Palette from: https://flatuicolors.com/palette/defo
+ */
+.home-menu {
+	background: #2980b9;
+	margin-bottom: 0.3em;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+} 
+.pure-menu-heading {
+	color: #ecf0f1;
+}
+.pure-menu-heading:hover {
+	color: #2980b9;
+	background-color: #ecf0f1;
+}
+.pure-menu-link {
+	color: #ecf0f1;
+}
+.pure-menu-link:hover {
+	color: #2980b9;
+	background-color: #ecf0f1;
+}
+.pure-menu-selected .pure-menu-link {
+	text-decoration: underline;
+	color: #ecf0f1 !important;
+}
+.content-wrapper {
+	margin-top: 3em;
+}

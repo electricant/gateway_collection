@@ -89,30 +89,73 @@
 	</script>
 </head>
 <body>
-	<h1>Status for Hermes</h1>
+	<div class="header">
+	<div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
+      	<a class="pure-menu-heading" style="text-decoration: underline"
+			href="">Hermes</a>
+		
+		<ul class="pure-menu-list">
+            	<li class="pure-menu-item">
+				<a href="/connection.html" class="pure-menu-link">
+					Connection
+				</a>
+			</li>
+            	<li class="pure-menu-item">
+				<a href="/misc.html" class="pure-menu-link">
+					Miscellaneous
+				</a>
+			</li>
+        	</ul>
+	</div>
+	</div>
+	
+	<div class="content-wrapper">
+		<h2>Overall Status</h2>
+		<button class="pure-button tooltip">
+			<i id="statusIcon" class="fa fa-spinner"></i>
+			<span id="statusTooltip" class="tooltiptext">Loading...</span>
+		</button>
 
-	<h2>General</h2>
-	<button class="pure-button tooltip">
-		<i id="statusIcon" class="fa fa-spinner"></i>
-		<span id="statusTooltip" class="tooltiptext">Loading...</span>
-	</button>
-
-	<h2>Internet Connection</h2>
+		<h2>Internet Connection</h2>
 		<img src="/cgi/vnstat.pl?0-hg" alt="Hourly graph">
 		<img src="/cgi/vnstat.pl?0-s" alt="Summary">
-		<img src="/cgi/vnstat.pl?0-t" alt="Top 10 days">
-		<p><a href="https://www.iliad.it/account/">[more details]</a></p>
-	<!-- SUPERSEDED
-	<h2>DHCP server</h2>
-		<p><iframe class="singleline" src="/cgi/dhcpd_ctl.sh"></iframe>
-		</p>
-	
-	<h2>DNS server</h2>
-		<p><iframe class="singleline" src="/cgi/pdnsd_ctl.sh"></iframe>
-		</p>
-	-->
 
-	<h2>Miscellaneous</h2>
-		<p><iframe class="termsize" src="/cgi/misc.sh"></iframe></p>
+		<h2>Network Topology</h2>
+		<table style="text-align: center; font-family: monospace;">
+			<tr>
+				<td>
+					<i class="fas fa-broadcast-tower"></i>
+					<br/>
+					Huawei E3372
+					<br/>
+					<a href="http://192.168.8.1">[192.168.8.1]</a>
+				</td>
+				<td>
+					<i class="fab fa-usb"></i>
+					<br/>
+					<==>
+				</td>
+				<td>
+					<i class="fab fa-raspberry-pi"></i>
+					<br/>
+					Raspberry Pi
+					<br/>
+					<a href="http://192.168.8.4">[192.168.8.4]</a>
+				</td>
+				<td>
+					<i class="fas fa-ethernet"></i>
+					<br/>
+					<==>
+				</td>
+				<td>
+					<i class="fas fa-wifi"></i>
+					<br/>
+					Wi-Fi
+					<br/>
+					<a href="http://192.168.8.5">[192.168.8.5]</a>
+				</td>
+			</tr>
+		</table>
+	</div>
 </body>
 </html>
