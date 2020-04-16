@@ -5,4 +5,5 @@ Name=eth1
 #DHCP=ipv4
 Address=192.168.8.2/30
 Gateway=192.168.8.1
-DNS=192.168.8.4
+DNS=127.0.0.1
+DNS=8.8.8.8
