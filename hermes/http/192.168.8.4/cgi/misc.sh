@@ -2,11 +2,14 @@
 #
 PATH="/bin:/usr/bin:/usr/ucb:/usr/opt/bin"
 
-echo "Content-type: text/plain; charset=utf-8"
-echo ""
+# Tell the client to close the connection. We do not suport keep-alive.
+echo "Connection: close"
+echo "Date: " $(env TZ=GMT date '+%a, %d %b %Y %T %Z')
 
 case "$QUERY_STRING" in
 	json)
+		echo "Content-type: application/json; charset=utf-8\n"
+		
 		printf '{\n\t"uptime": "'
 		uptime | xargs echo -n
 		printf '",\n'
@@ -34,6 +37,8 @@ case "$QUERY_STRING" in
 		printf '}\n'
 		;;
 	*)
+		echo "Content-type: text/plain; charset=utf-8\n"
+		
 		echo --------------------
 		echo " Uptime:"
 		echo --------------------

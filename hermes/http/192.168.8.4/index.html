@@ -33,21 +33,21 @@
 			}
 			tltText += "<br>";
 			if (generalStatus.dhcpd == 0) {
-				tltText += "DHCP: Active";
+				tltText += "DHCP server: Active";
 			} else {
-				tltText += "DHCP: Inactive";
-			}
-			tltText += "<br>";
-			if (generalStatus.traffic_shaping == 0) {
-				tltText += "Traffic Shaping: Active";
-			} else {
-				tltText += "Traffic Shaping: Inactive";
+				tltText += "DHCP server: Inactive";
 			}
 			tltText += "<br>";
 			if (generalStatus.iptables == 0) {
-				tltText += "Iptables: Active";
+				tltText += "Iptables rules: Loaded";
 			} else {
-				tltText += "Iptables: Inactive";
+				tltText += "Iptables rules: Failed";
+			}
+			tltText += "<br>";
+			if (generalStatus.internet_status == 0) {
+				tltText += "Internet connectivity: Active";
+			} else {
+				tltText += "Internet connectivity: Inactive";
 			}
 			
 			document.getElementById("statusTooltip").innerHTML = tltText;
