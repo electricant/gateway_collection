@@ -10,7 +10,7 @@ set -e
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
 SPEED_DOWN="12Mbit"
 SPEED_UP="10Mbit"
-RTT="50ms"
+RTT="60ms"
 
 # see https://linux.die.net/man/8/tc-prio
 PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"
