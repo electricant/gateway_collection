@@ -38,56 +38,61 @@ tc qdisc add dev eth1 parent 1:2 handle 20: cake bandwidth $SPEED_UP \
 # send packets marked as 10 to the pfifo for low latency
 tc filter add dev eth1 parent 1:0 protocol ip prio 10 handle 10 fw flowid 1:1
 
-###############################
-# Iptables rules for priority #
-###############################
+#
+# Apply iptables rules for priority: first we identify high priority and
+# best-effort services, then mark the rest as bulk.
+#
 iptables -t mangle -F POSTROUTING
 
 # Low-latency high priority services & packets are marked as 10
 if iptables -t mangle -N NO_SHAPE ; then
 	iptables -t mangle -A NO_SHAPE -j MARK --set-mark 10
+	iptables -t mangle -A NO_SHAPE -j ACCEPT # skip other rules
 fi
 
-# TCP control packets that do not carry data
+# TCP control packets that do not carry data are maximum prio
 iptables -t mangle -A POSTROUTING -p tcp \
 	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
 	-j NO_SHAPE
-# Local network transfers
+# Local network transfers (and local multicast) must not be shaped
 iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 192.168.0.0/16 \
 	-j NO_SHAPE
-# DNS requests to/from this host
-#iptables -t mangle -A POSTROUTING -p tcp -s 192.168.13.2 --dport 53 -j NO_SHAPE
-#iptables -t mangle -A POSTROUTING -p tcp -d 192.168.13.2 --sport 53 -j NO_SHAPE
-#iptables -t mangle -A POSTROUTING -p udp -s 192.168.13.2 --dport 53 -j NO_SHAPE
-#iptables -t mangle -A POSTROUTING -p udp -d 192.168.13.2 --sport 53 -j NO_SHAPE
+iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 239.0.0.0/8 \
+	-j NO_SHAPE
+# DNS requests to/from this host maximim priority
 iptables -t mangle -A POSTROUTING -m owner --uid-owner unbound -j NO_SHAPE
-# SSH connections
+# SSH connections are also latency-sensitive
 iptables -t mangle -A POSTROUTING -p tcp --dport 22 -j NO_SHAPE
 iptables -t mangle -A POSTROUTING -p tcp --sport 22 -j NO_SHAPE
-# UDP packets also do not like being dropped
-#iptables -t mangle -A POSTROUTING -p udp -j NO_SHAPE
+# Better not delay NTP
+iptables -t mangle -A POSTROUTING -p udp --dport 123 -j NO_SHAPE
+iptables -t mangle -A POSTROUTING -p udp --sport 123 -j NO_SHAPE
 
-# Bulk transfers do not require low latency and slow everything down.
-# Mark everything as CS1 and let CAKE deal with them
-if iptables -t mangle -N BULK ; then
-	iptables -t mangle -A BULK -j DSCP --set-dscp-class CS1
-fi
+# Mark VOIP as EF
+iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 8200,1853 \
+	-j DSCP --set-dscp-class EF
+iptables -t mangle -A POSTROUTING -p udp -m multiport --dports 8200,1853 \
+	-j DSCP --set-dscp-class EF
+iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 8200,1853 \
+	-j DSCP --set-dscp-class EF
+iptables -t mangle -A POSTROUTING -p udp -m multiport --sports 8200,1853 \
+	-j DSCP --set-dscp-class EF
 
-# FTP(S)
-iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 20,21,989,990 \
-     	-j BULK
-iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 20,21,989,990 \
-     	-j BULK
-# Long HTTP(S) connections
+# Short HTTP(S) connections are best-effort. Accept them straight away
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 80,443 \
-	-m connbytes --connbytes $((2*1024*1024)) --connbytes-mode bytes \
-	--connbytes-dir both -j BULK
+	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
+	--connbytes-dir both -j ACCEPT
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
-	-m connbytes --connbytes $((2*1024*1024)) --connbytes-mode bytes \
-	--connbytes-dir both -j BULK
-# Oddball HTTP ports are marked directly as bulk
-iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 591,8000,8008,8080 \
-     	-j BULK
-iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 591,8000,8008,8080 \
-     	-j BULK
+	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
+	--connbytes-dir both -j ACCEPT
 
+# Leave alone all the packets that already have a DSCP class and do not fall in 
+# the rules above. Actually DSCP is a subset/extension of TOS so just one of
+# those rules will match.
+iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
+iptables -t mangle -A POSTROUTING -m dscp ! --dscp 0 -j ACCEPT
+
+# Everything else is bulk: mark everything as CS1 and let CAKE deal with it
+iptables -t mangle -A POSTROUTING -m limit --limit 1/min -j LOG \
+	--log-prefix "iptables-bulk: "
+iptables -t mangle -A POSTROUTING -j DSCP --set-dscp-class CS1
