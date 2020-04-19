@@ -29,10 +29,12 @@ COMMIT
 -A FORWARD -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
 -A FORWARD -p udp -m conntrack --ctstate NEW -j UDP-FW
 -A FORWARD -j REJECT-POLITE
--A REJECT-POLITE -j LOG
+-A REJECT-POLITE -j LOG --log-prefix "iptables-dropped: "
 -A REJECT-POLITE -p udp -j REJECT --reject-with icmp-port-unreachable
 -A REJECT-POLITE -p tcp -j REJECT --reject-with tcp-reset
 -A REJECT-POLITE -j REJECT --reject-with icmp-proto-unreachable
+-A TCP-FW -p tcp -m multiport --dports 6889:6900 -m comment --comment "Torrent" -j ACCEPT
+-A UDP-FW -p udp -m multiport --dports 6889:6900 -m comment --comment "Torrent" -j ACCEPT
 COMMIT
 # Completed on Fri Apr 17 11:43:29 2020
 
