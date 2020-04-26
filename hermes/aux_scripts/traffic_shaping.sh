@@ -9,7 +9,7 @@ set -e
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
 SPEED_DOWN="12Mbit"
-SPEED_UP="10Mbit"
+SPEED_UP="9Mbit"
 RTT="60ms"
 
 # see https://linux.die.net/man/8/tc-prio
@@ -69,14 +69,14 @@ iptables -t mangle -A POSTROUTING -p udp --dport 123 -j NO_SHAPE
 iptables -t mangle -A POSTROUTING -p udp --sport 123 -j NO_SHAPE
 
 # Mark VOIP as EF
-iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 8200,1853 \
-	-j DSCP --set-dscp-class EF
 iptables -t mangle -A POSTROUTING -p udp -m multiport --dports 8200,1853 \
-	-j DSCP --set-dscp-class EF
-iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 8200,1853 \
-	-j DSCP --set-dscp-class EF
+	-j DSCP --set-dscp-class EF -m comment --comment "VOIP, GoToMeeting"
 iptables -t mangle -A POSTROUTING -p udp -m multiport --sports 8200,1853 \
-	-j DSCP --set-dscp-class EF
+	-j DSCP --set-dscp-class EF -m comment --comment "VOIP, GoToMeeting"
+iptables -t mangle -A POSTROUTING -p udp -m multiport --sports 3478:3481 \
+	-j DSCP --set-dscp-class EF -m comment --comment "Skype, Microsoft Teams"
+iptables -t mangle -A POSTROUTING -p udp -m multiport --dports 3478:3481 \
+	-j DSCP --set-dscp-class EF -m comment --comment "Skype, Microsoft Teams"
 
 # Short HTTP(S) connections are best-effort. Accept them straight away
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 80,443 \
@@ -86,11 +86,9 @@ iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
 	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
 	--connbytes-dir both -j ACCEPT
 
-# Leave alone all the packets that already have a DSCP class and do not fall in 
-# the rules above. Actually DSCP is a subset/extension of TOS so just one of
-# those rules will match.
+# Leave alone all the packets that already have a TOS/DSCP class set.
+# NOTE: DSCP is a subset/extension of TOS, no need to match it.
 iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
-iptables -t mangle -A POSTROUTING -m dscp ! --dscp 0 -j ACCEPT
 
 # Everything else is bulk: mark everything as CS1 and let CAKE deal with it
 iptables -t mangle -A POSTROUTING -m limit --limit 1/min -j LOG \
