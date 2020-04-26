@@ -17,7 +17,7 @@ get-all:
 	@scp $(HOST):/etc/thttpd.conf config/
 	@scp $(HOST):/etc/iptables/iptables.rules config/
 	@scp $(HOST):/etc/vnstat.conf config/
-	@scp $(HOST):/etc/dhcpd.conf config/
+#	@scp $(HOST):/etc/dhcpd.conf config/
 	@scp $(HOST):/boot/config.txt config/
 	@scp $(HOST):/etc/unbound/unbound.conf config/
 	@scp $(HOST):/etc/ntp.conf config/
