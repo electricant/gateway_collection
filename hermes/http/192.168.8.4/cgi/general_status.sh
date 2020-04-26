@@ -16,7 +16,7 @@ echo "Content-type: application/json; charset=utf-8\n"
 ps -C unbound >/dev/null
 dns_status=$?
 
-ps -C dhcpd >/dev/null 
+#ps -C dhcpd >/dev/null 
 dhcpd_status=$?
 
 systemctl is-active --quiet iptables 
