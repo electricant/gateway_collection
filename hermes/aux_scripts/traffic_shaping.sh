@@ -1,47 +1,52 @@
 #!/bin/bash
 #
-# Setup traffic shaping for this device.
-# The classes are simple as I'm am intrested to keep interactivity high by
-# limiting the maximum throughput
+# Script to setup traffic shaping for this device.
 
-# exit when any command fails
+# Exit when any command fails
 set -e
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="12Mbit"
+SPEED_DOWN="10Mbit"
 SPEED_UP="9Mbit"
 RTT="60ms"
 
-# see https://linux.die.net/man/8/tc-prio
-PRIOMAP="1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1"
+# Priomap definition for tc-prio. When dequeueing, band 0 is tried first and
+# only if it did not deliver a packet does PRIO try band 1, and so onwards.
+# Maximum reliability packets should therefore go to band 0.
+# See https://linux.die.net/man/8/tc-prio or man tc-prio for more info
+PRIOMAP="1 1 0 0  1 1 1 1  1 1 0 0  1 1 1 1"
 
-# Reset interfaces just to be safe (ignoring errors)
-tc qdisc del dev eth0 root || true
-tc qdisc del dev eth1 root || true
+#
+# Function to setup traffic shaping queues for the given device.
+# A prio queue with two bands is used as the root to differentiate maximum
+# reliability traffic from the rest. Maximum reliability traffic is delivered
+# using tc-codel while the rest of the traffic is shaped using tc-cake to avoid
+# starvation.
+#
+# Parameters:
+#  $1 -> interface shaping is applied to
+#  $2 -> speed limit for the interface
+#
+tc_setup () {
+	# Reset interface just to be safe (ignoring errors)
+	tc qdisc del dev $1 root || true
+
+	tc qdisc add dev $1 root handle 1: prio bands 2 priomap $PRIOMAP
+	tc qdisc add dev $1 parent 1:1 handle 10: codel
+	tc qdisc add dev $1 parent 1:2 handle 20: cake bandwidth $2 rtt $RTT \
+		ethernet ether-vlan
+	# send packets marked as 10 to the maximum reliability queue
+	tc filter add dev $1 parent 1:0 protocol ip prio 10 handle 10 fw \
+		flowid 1:1
+}
 
 # Download is the data going out from eth0
-# Use prio classful queue with two bands
-# (one for low latency and one for target throughput)
-tc qdisc add dev eth0 root handle 1: prio bands 2 priomap $PRIOMAP
-tc qdisc add dev eth0 parent 1:1 handle 10: codel
-tc qdisc add dev eth0 parent 1:2 handle 20: cake bandwidth $SPEED_DOWN \
-	rtt $RTT ingress ethernet ether-vlan
-# send packets marked as 10 to the pfifo for low latency
-tc filter add dev eth0 parent 1:0 protocol ip prio 10 handle 10 fw flowid 1:1
-
+tc_setup eth0 $SPEED_DOWN
 # Upload is the data going out of eth1
-# use prio classful queue and route everything by default to 1:1
-tc qdisc add dev eth1 root handle 1: prio bands 2 priomap $PRIOMAP
-tc qdisc add dev eth1 parent 1:1 handle 10: codel
-tc qdisc add dev eth1 parent 1:2 handle 20: cake bandwidth $SPEED_UP \
-	rtt $RTT egress ethernet ether-vlan
-# send packets marked as 10 to the pfifo for low latency
-tc filter add dev eth1 parent 1:0 protocol ip prio 10 handle 10 fw flowid 1:1
+tc_setup eth1 $SPEED_UP
 
-#
 # Apply iptables rules for priority: first we identify high priority and
 # best-effort services, then mark the rest as bulk.
-#
 iptables -t mangle -F POSTROUTING
 
 # Low-latency high priority services & packets are marked as 10
@@ -50,33 +55,49 @@ if iptables -t mangle -N NO_SHAPE ; then
 	iptables -t mangle -A NO_SHAPE -j ACCEPT # skip other rules
 fi
 
-# TCP control packets that do not carry data are maximum prio
-iptables -t mangle -A POSTROUTING -p tcp \
-	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
-	-j NO_SHAPE
+# VOIP traffic that is not already marked falls into this chain
+if iptables -t mangle -N SET_EF ; then
+	iptables -t mangle -A SET_EF -j DSCP --set-dscp-class EF
+	iptables -t mangle -A SET_EF -j ACCEPT # skip other rules
+fi
+
+# Traffic to be marked as BULK falls into this chain
+if iptables -t mangle -N SET_BULK ; then
+	iptables -t mangle -A SET_BULK -j DSCP --set-dscp-class CS1
+	iptables -t mangle -A SET_BULK -j ACCEPT # skip other rules
+fi
+
 # Local network transfers (and local multicast) must not be shaped
 iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 192.168.0.0/16 \
 	-j NO_SHAPE
 iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 239.0.0.0/8 \
 	-j NO_SHAPE
-# DNS requests to/from this host maximim priority
+# TCP control packets that do not carry data are maximum prio
+iptables -t mangle -A POSTROUTING -p tcp \
+	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
+	-j NO_SHAPE
+# DNS requests to/from this host are maximum priority
 iptables -t mangle -A POSTROUTING -m owner --uid-owner unbound -j NO_SHAPE
-# SSH connections are also latency-sensitive
-iptables -t mangle -A POSTROUTING -p tcp --dport 22 -j NO_SHAPE
-iptables -t mangle -A POSTROUTING -p tcp --sport 22 -j NO_SHAPE
+# All the other DNS queries are sent to bulk
+iptables -t mangle -A POSTROUTING -p udp --dport 53 -j SET_BULK
+iptables -t mangle -A POSTROUTING -p tcp --dport 53 -j SET_BULK
 # Better not delay NTP
 iptables -t mangle -A POSTROUTING -p udp --dport 123 -j NO_SHAPE
 iptables -t mangle -A POSTROUTING -p udp --sport 123 -j NO_SHAPE
 
+# Leave alone all the packets that already have a TOS/DSCP class set.
+# NOTE: DSCP is a subset/extension of TOS, no need to match it.
+iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
+
 # Mark VOIP as EF
 iptables -t mangle -A POSTROUTING -p udp -m multiport --dports 8200,1853 \
-	-j DSCP --set-dscp-class EF -m comment --comment "VOIP, GoToMeeting"
+	-j SET_EF -m comment --comment "VOIP, GoToMeeting"
 iptables -t mangle -A POSTROUTING -p udp -m multiport --sports 8200,1853 \
-	-j DSCP --set-dscp-class EF -m comment --comment "VOIP, GoToMeeting"
+	-j SET_EF -m comment --comment "VOIP, GoToMeeting"
 iptables -t mangle -A POSTROUTING -p udp -m multiport --sports 3478:3481 \
-	-j DSCP --set-dscp-class EF -m comment --comment "Skype, Microsoft Teams"
+	-j SET_EF -m comment --comment "Skype, Microsoft Teams"
 iptables -t mangle -A POSTROUTING -p udp -m multiport --dports 3478:3481 \
-	-j DSCP --set-dscp-class EF -m comment --comment "Skype, Microsoft Teams"
+	-j SET_EF -m comment --comment "Skype, Microsoft Teams"
 
 # Short HTTP(S) connections are best-effort. Accept them straight away
 iptables -t mangle -A POSTROUTING -p tcp -m multiport --dports 80,443 \
@@ -86,11 +107,8 @@ iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
 	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
 	--connbytes-dir both -j ACCEPT
 
-# Leave alone all the packets that already have a TOS/DSCP class set.
-# NOTE: DSCP is a subset/extension of TOS, no need to match it.
-iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
-
-# Everything else is bulk: mark everything as CS1 and let CAKE deal with it
-iptables -t mangle -A POSTROUTING -m limit --limit 1/min -j LOG \
+# Everything else is sent to bulk. Log the packets just to make sure we are not
+# delaying traffic that should not belong here.
+iptables -t mangle -A POSTROUTING -m limit --limit 2/min -j LOG \
 	--log-prefix "iptables-bulk: "
-iptables -t mangle -A POSTROUTING -j DSCP --set-dscp-class CS1
+iptables -t mangle -A POSTROUTING -j SET_BULK
