@@ -16,9 +16,6 @@ echo "Content-type: application/json; charset=utf-8\n"
 ps -C unbound >/dev/null
 dns_status=$?
 
-#ps -C dhcpd >/dev/null 
-dhcpd_status=$?
-
 systemctl is-active --quiet iptables 
 iptables_status=$?
 
@@ -27,10 +24,8 @@ ping -q -c 1 -W 0.15 ipol.ml >/dev/null 2>&1
 internet_status=$?
 
 # If all services above are active then the overall status is good
-overall_status=$((dns_status + dhcpd_status + iptables_status + \
-	            internet_status))
+overall_status=$((dns_status + iptables_status + internet_status))
 
 # Output headers and data
 echo "{\n\t\"overall\": $overall_status, \"dns_server\": $dns_status," \
-     "\"dhcpd\": $dhcpd_status, \"iptables\": $iptables_status," \
-     "\"internet_status\": $internet_status\n}"
+     "\"iptables\": $iptables_status, \"internet_status\": $internet_status\n}"

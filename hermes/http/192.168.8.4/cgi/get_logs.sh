@@ -2,7 +2,7 @@
 #
 PATH="/bin:/usr/bin:/usr/ucb:/usr/opt/bin"
 
-NUM_LINES=20
+NUM_LINES=50
 
 # Tell the client to close the connection. We do not suport keep-alive.
 echo "Connection: close"

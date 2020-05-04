@@ -26,16 +26,16 @@
 		function updateStatusDisplay(generalStatus) {
 			var tltText = "";
 
-			if (generalStatus.dns_server == 0) {
-				tltText = "DNS server: Active";
+			if (generalStatus.internet_status == 0) {
+				tltText += "Internet connectivity: Active";
 			} else {
-				tltText = "DNS server: Inactive";
+				tltText += "Internet connectivity: Inactive";
 			}
 			tltText += "<br>";
-			if (generalStatus.dhcpd == 0) {
-				tltText += "DHCP server: Active";
+			if (generalStatus.dns_server == 0) {
+				tltText += "DNS server: Active";
 			} else {
-				tltText += "DHCP server: Inactive";
+				tltText += "DNS server: Inactive";
 			}
 			tltText += "<br>";
 			if (generalStatus.iptables == 0) {
@@ -43,15 +43,8 @@
 			} else {
 				tltText += "Iptables rules: Failed";
 			}
-			tltText += "<br>";
-			if (generalStatus.internet_status == 0) {
-				tltText += "Internet connectivity: Active";
-			} else {
-				tltText += "Internet connectivity: Inactive";
-			}
-			
+		
 			document.getElementById("statusTooltip").innerHTML = tltText;
-			
 			statusIco = document.getElementById("statusIcon");
 			parentBaseClass = "pure-button tooltip";
 
