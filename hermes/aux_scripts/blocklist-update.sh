@@ -11,8 +11,7 @@ SOURCES=("http://www.malwaredomainlist.com/hostslist/hosts.txt"
 	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts"
 	   "https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts"
 	   "https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt"
-#	   "https://someonewhocares.org/hosts/hosts"
-	   "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts;showintro=0"
+	   "https://someonewhocares.org/hosts/hosts"
 	  )
 
 # Temporary file where the hosts are stored
@@ -24,12 +23,12 @@ TARGET=/etc/unbound/blocked-domains.conf
 # Clean temporary download file
 echo "" > $TEMPFILE
 
-# Download and append
+# Download sources and append them to the temp file
 for src in ${SOURCES[@]}
 do
 	echo Downloading $src
 	# remove comment lines and unneeded whitespace
-	curl -s $src | sed '/^#/d;/^$/d' > $TEMPFILE 
+	curl -s $src | sed '/^#/d;/^$/d; s/\r//;s/127.0.0.1/0.0.0.0/' >>$TEMPFILE 
 done
 
 echo Lines before cleanup:
@@ -52,4 +51,4 @@ cat $TEMPFILE \
 
 # Install
 cp $TEMPFILE.unbound $TARGET
-
+systemctl reload unbound
