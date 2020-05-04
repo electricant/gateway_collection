@@ -1,0 +1,10 @@
+[Unit]
+Description=Use overlayfs over tmpfs for /var/log
+Wants=local-fs.target
+After=local-fs.target
+
+[Service]
+ExecStart=/home/alarm/var_log_overlay.sh
+
+[Install]
+WantedBy=multi-user.target

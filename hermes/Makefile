@@ -8,10 +8,12 @@ get-all:
 
 	# Getting various auxiliary scripits...
 	@scp $(HOST):/home/alarm/traffic_shaping.sh aux_scripts/
+	@scp $(HOST):/home/alarm/var_log_overlay.sh aux_scripts/
 	@scp $(HOST):/home/alarm/blocklist-update.sh aux_scripts/
 
 	# Getting service files...
 	@scp $(HOST):/usr/lib/systemd/system/traffic_shaping.service services/
+	@scp $(HOST):/etc/systemd/system/var_log_overlay.service services/
 
 	# Getting config files...
 	@scp $(HOST):/etc/thttpd.conf config/
