@@ -27,18 +27,18 @@ echo "" > $TEMPFILE
 for src in ${SOURCES[@]}
 do
 	echo Downloading $src
-	# remove comment lines and unneeded whitespace
-	curl -s $src | sed '/^#/d;/^$/d; s/\r//;s/127.0.0.1/0.0.0.0/' >>$TEMPFILE 
+	# remove unneeded whitespace and make all ips 0.0.0.0
+	curl -s $src | sed 's/\r//;s/127.0.0.1/0.0.0.0/' >>$TEMPFILE
 done
 
 echo Lines before cleanup:
 wc -l $TEMPFILE
 
-# Cleanup 1st pass: remove duplicates
-sort -u $TEMPFILE > $TEMPFILE.dedup
-# 2nd pass: remove unneeded lines (comments & localhost stuff)
-cat $TEMPFILE.dedup | grep -E '^[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' \
-     | grep -vE 'local$|localhost.*$|broadcasthost$|ip6-.*$' > $TEMPFILE
+# Cleanup ip addresses (ignoring comments) & remove localhost stuff
+cat $TEMPFILE | awk '/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/ { print $1,$2 }' \
+     | grep -vE 'local$|localhost.*$|broadcasthost$|ip6-.*$' > $TEMPFILE.dedup
+# Cleanup 2nd pass: remove duplicates
+sort -u $TEMPFILE.dedup > $TEMPFILE
 
 echo Lines after cleanup:
 wc -l $TEMPFILE
