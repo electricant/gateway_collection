@@ -7,14 +7,14 @@ set -e
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
 SPEED_DOWN="10Mbit"
-SPEED_UP="9Mbit"
+SPEED_UP="10Mbit"
 RTT="60ms"
 
 # Priomap definition for tc-prio. When dequeueing, band 0 is tried first and
 # only if it did not deliver a packet does PRIO try band 1, and so onwards.
 # Maximum reliability packets should therefore go to band 0.
 # See https://linux.die.net/man/8/tc-prio or man tc-prio for more info
-PRIOMAP="1 1 0 0  1 1 1 1  1 1 0 0  1 1 1 1"
+PRIOMAP="1 1 1 1  1 1 1 1  0 0 0 0  1 1 1 1"
 
 #
 # Function to setup traffic shaping queues for the given device.
@@ -26,22 +26,23 @@ PRIOMAP="1 1 0 0  1 1 1 1  1 1 0 0  1 1 1 1"
 # Parameters:
 #  $1 -> interface shaping is applied to
 #  $2 -> speed limit for the interface
+#  $3 -> additional parameters for cake, such as 'ingress'
 #
 tc_setup () {
 	# Reset interface just to be safe (ignoring errors)
 	tc qdisc del dev $1 root || true
 
 	tc qdisc add dev $1 root handle 1: prio bands 2 priomap $PRIOMAP
-	tc qdisc add dev $1 parent 1:1 handle 10: codel
+	# bfifo limit is calculated assuming <5ms latency and 10Mbit/s rate
+	tc qdisc add dev $1 parent 1:1 handle 10: bfifo limit 48Kb
 	tc qdisc add dev $1 parent 1:2 handle 20: cake bandwidth $2 rtt $RTT \
-		ethernet ether-vlan
+		ethernet $3
 	# send packets marked as 10 to the maximum reliability queue
-	tc filter add dev $1 parent 1:0 protocol ip prio 10 handle 10 fw \
-		flowid 1:1
+	tc filter add dev $1 parent 1: protocol ip prio 1 handle 10 fw flowid 1:1
 }
 
-# Download is the data going out from eth0
-tc_setup eth0 $SPEED_DOWN
+# Download goes out of eth0, tell cake we are shaping ingress packets
+tc_setup eth0 $SPEED_DOWN ingress
 # Upload is the data going out of eth1
 tc_setup eth1 $SPEED_UP
 
@@ -68,6 +69,7 @@ if iptables -t mangle -N SET_BULK ; then
 fi
 
 # Local network transfers (and local multicast) must not be shaped
+iptables -t mangle -A POSTROUTING -s 127.0.0.0/8 -d 127.0.0.0/8 -j ACCEPT
 iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 192.168.0.0/16 \
 	-j NO_SHAPE
 iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 239.0.0.0/8 \
@@ -76,18 +78,13 @@ iptables -t mangle -A POSTROUTING -s 192.168.0.0/16 -d 239.0.0.0/8 \
 iptables -t mangle -A POSTROUTING -p tcp \
 	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
 	-j NO_SHAPE
+# Do not shape icmp
+iptables -t mangle -A POSTROUTING -p icmp -j NO_SHAPE
 # DNS requests to/from this host are maximum priority
 iptables -t mangle -A POSTROUTING -m owner --uid-owner unbound -j NO_SHAPE
-# All the other DNS queries are sent to bulk
-iptables -t mangle -A POSTROUTING -p udp --dport 53 -j SET_BULK
-iptables -t mangle -A POSTROUTING -p tcp --dport 53 -j SET_BULK
 # Better not delay NTP
 iptables -t mangle -A POSTROUTING -p udp --dport 123 -j NO_SHAPE
 iptables -t mangle -A POSTROUTING -p udp --sport 123 -j NO_SHAPE
-
-# Leave alone all the packets that already have a TOS/DSCP class set.
-# NOTE: DSCP is a subset/extension of TOS, no need to match it.
-iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
 
 # Mark VOIP as EF
 iptables -t mangle -A POSTROUTING -p udp -m multiport --dports 8200,1853 \
@@ -107,8 +104,12 @@ iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
 	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
 	--connbytes-dir both -j ACCEPT
 
-# Everything else is sent to bulk. Log the packets just to make sure we are not
-# delaying traffic that should not belong here.
-iptables -t mangle -A POSTROUTING -m limit --limit 2/min -j LOG \
-	--log-prefix "iptables-bulk: "
+# Leave alone all the packets that already have a TOS/DSCP class set.
+# NOTE: DSCP is a subset/extension of TOS, no need to match it.
+iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
+
+# Everything else is sent to bulk. Log the packets used to start the connection
+# just to make sure we are not delaying traffic that should not belong here.
+iptables -t mangle -A POSTROUTING -m state --state NEW,RELATED \
+	-m limit --limit 5/min -j LOG --log-prefix "iptables-bulk: "
 iptables -t mangle -A POSTROUTING -j SET_BULK
