@@ -4,6 +4,9 @@
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
+-A PREROUTING -i eth0 -p udp -m udp --dport 123 -j REDIRECT
+-A PREROUTING -i eth0 -p udp -m udp --dport 53 -j REDIRECT
+-A PREROUTING -i eth0 -p tcp -m tcp --dport 53 -j REDIRECT
 COMMIT
 # Completed on Wed Apr  8 11:03:24 2020
 
