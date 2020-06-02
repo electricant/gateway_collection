@@ -42,9 +42,9 @@ tc_setup () {
 }
 
 # Download goes out of eth0, tell cake we are shaping ingress packets
-tc_setup eth0 $SPEED_DOWN ingress
-# Upload is the data going out of eth1
-tc_setup eth1 $SPEED_UP
+tc_setup eth0 $SPEED_DOWN "ingress dual-dsthost"
+# Upload is the data going out of eth1 (from LAN to internet)
+tc_setup eth1 $SPEED_UP dual-srchost
 
 # Apply iptables rules for priority: first we identify high priority and
 # best-effort services, then mark the rest as bulk.
