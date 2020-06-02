@@ -4,7 +4,7 @@ HOST=root@192.168.8.2
 
 get-all:
 	# Getting HTTP gui files...
-	@scp -r $(HOST):/srv/http/* http/
+	@scp -r $(HOST):/srv/http/192.168.8.4 http/
 
 	# Getting various auxiliary scripits...
 	@scp $(HOST):/home/alarm/traffic_shaping.sh aux_scripts/
