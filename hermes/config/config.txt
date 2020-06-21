@@ -1,6 +1,9 @@
 # See /boot/overlays/README for all available options
 initramfs initramfs-linux.img followkernel
 
+# Enable te UART for GNSS module
+enable_uart=1
+
 # Give the least possible amount of memory for the GPU
 gpu_mem=16
 
