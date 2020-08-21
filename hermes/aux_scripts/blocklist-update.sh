@@ -12,6 +12,8 @@ SOURCES=("http://www.malwaredomainlist.com/hostslist/hosts.txt"
 	   "https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts"
 	   "https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt"
 	   "https://someonewhocares.org/hosts/hosts"
+	   "https://raw.githubusercontent.com/llacb47/mischosts/master/social/tiktok-block"
+	   "https://raw.githubusercontent.com/llacb47/mischosts/master/microsoft-telemetry"
 	  )
 
 # Temporary file where the hosts are stored
