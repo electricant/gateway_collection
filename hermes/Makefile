@@ -5,6 +5,7 @@ HOST=root@192.168.8.2
 get-all:
 	# Getting HTTP gui files...
 	@scp -r $(HOST):/srv/http/192.168.8.4 http/
+	@scp -r $(HOST):/srv/http/iot.pielluzza.ts http/
 
 	# Getting various auxiliary scripits...
 	@scp $(HOST):/home/alarm/traffic_shaping.sh aux_scripts/
@@ -19,8 +20,8 @@ get-all:
 	@scp $(HOST):/etc/thttpd.conf config/
 	@scp $(HOST):/etc/iptables/iptables.rules config/
 	@scp $(HOST):/etc/vnstat.conf config/
-#	@scp $(HOST):/etc/dhcpd.conf config/
 	@scp $(HOST):/boot/config.txt config/
+	@scp $(HOST):/boot/cmdline.txt config/
 	@scp $(HOST):/etc/unbound/unbound.conf config/
 	@scp $(HOST):/etc/ntp.conf config/
 	@scp $(HOST):/etc/sysctl.d/* config/sysctl/

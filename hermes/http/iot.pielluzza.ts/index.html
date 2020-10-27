@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pielluzza IoT Dashboard</title>
+  <!-- Local stuff -->
+  <link href="css/style.css" rel="stylesheet" type="text/css">
+  <!-- dygraphs library http://dygraphs.com/download.html -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.js">
+  </script>
+  <link rel="stylesheet"
+	href="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.css" />
+</head>
+<body>
+	<h1 style="font-size:1.75em">Pielluzza IoT Dashboard</h1>
+
+	<img src="https://wttr.in/Trieste_1q.png" alt="Weather in Trieste" 
+		width="750">
+
+	<h2 id="hStanza" style="font-size:1.25em">cece-stanza:</h2>
+	<p><a href="/data/cece-stanza.csv">get complete raw data as CSV</a></p>
+	<div id="graphdiv1" style="width:100%; height:200px; max-width:500px">
+	</div>
+
+    	<h2 id="hFuori" style="font-size:1.25em">cece-fuori:</h2>
+	<p><a href="/data/cece-fuori.csv">get complete raw data as CSV</a></p>
+	<div id="graphdiv2" style="width:100%; height:200px; max-width:500px">
+	</div>
+
+	<script type="text/javascript">
+		function zeropad(x) {
+			return (x < 10) ? '0' + x : x;
+		}
+
+		function placeDygraph(where, data_url) {
+			new Dygraph(document.getElementById(where), data_url,
+			{
+				series : { 
+					"Temperature" : {
+						axis : "y1",
+						color : "red"
+					},
+					"Humidity" : {
+						axis : "y2",
+						color : "blue",
+						fillGraph: true
+					}
+				},
+				axes: { x: {
+                  		axisLabelFormatter: function(d, gran, opts) {
+						date = new Date(d * 1000);
+						console.log(date);
+                      			return date.getDate() + "-" 
+							+ (1 + date.getMonth())
+							+ " " + date.getHours() 
+							+ ":" + zeropad(date.getMinutes());
+                  		}
+				}},
+				ylabel : 'Temperature',
+				y2label : 'Humidity',
+				showRangeSelector: true,
+				drawGapEdgePoints: true,
+				rollPeriod: 2
+			});
+		}
+
+		placeDygraph("graphdiv1", "cgi/get_last_week.pl?cece-stanza");
+		placeDygraph("graphdiv2", "cgi/get_last_week.pl?cece-fuori");
+
+		// Read latest temperature measurements and place them in the page
+	    	fetch("/cgi/get_latest_meas.pl")
+			.then(res => res.json())
+			.then((o) => {
+				console.log('cece-stanza', o['cece-stanza']);
+				console.log('cece-fuori', o['cece-fuori']);
+
+				var hStanza = document.getElementById("hStanza");
+			
+				hStanza.innerText += " (T: " + o['cece-stanza'].temp + "°C"
+				hStanza.innerText += ", H: " + o['cece-stanza'].rhum + "%)";
+
+				var hFuori = document.getElementById("hFuori");
+	
+				hFuori.innerText += " (T: " + o['cece-fuori'].temp + "°C"
+				hFuori.innerText += ", H: " + o['cece-fuori'].rhum + "%)";
+			}).catch(err => { throw err });
+	</script>
+</body>
+</html>
