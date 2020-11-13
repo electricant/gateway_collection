@@ -45,11 +45,11 @@ sort -u $TEMPFILE.dedup > $TEMPFILE
 echo Lines after cleanup:
 wc -l $TEMPFILE
 
-# Now convert it into a format that unbound can handle
-# see: https://deadc0de.re/articles/unbound-blocking-ads.html
+# Now convert the list entries into a format that unbound can handle:
+# We want to retrieve the domain part only and tell unbound to always return
+# NXDOMAIN for such a request. This is faster and requires less memory.
 cat $TEMPFILE \
-	| awk '{print "local-zone: \""$2"\" redirect"
-	        print "local-data: \""$2" A 0.0.0.0\""}' > $TEMPFILE.unbound
+	| awk '{print "local-zone: \""$2"\" always_nxdomain"}' > $TEMPFILE.unbound
 
 # Install
 cp $TEMPFILE.unbound $TARGET
