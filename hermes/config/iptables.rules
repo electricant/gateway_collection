@@ -3,6 +3,10 @@
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
+-A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT -m comment --comment "DNS-UDP"
+-A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT -m comment --comment "DNS-TCP"
+-A PREROUTING -i eth0 -p udp --dport 123 -j REDIRECT -m comment --comment "NTP"
+#-A POSTROUTING -o eth0 -p udp --dport 123 -j MASQUERADE -m comment --comment "NTP MASQUERADE"
 COMMIT
 
 *filter
@@ -20,7 +24,7 @@ COMMIT
 -A INPUT -j SIMPLE-FIREWALL
 
 -A FORWARD -p ipv6 -j ACCEPT
--A FORWARD -s 192.168.0.0/16 -j ACCEPT
+-A FORWARD -s 192.168.8.0/24 -j ACCEPT
 -A FORWARD -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
 -A FORWARD -p udp -m conntrack --ctstate NEW -j UDP-FW
 -A FORWARD -j SIMPLE-FIREWALL
