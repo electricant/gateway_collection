@@ -110,6 +110,6 @@ iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
 
 # Everything else is sent to bulk. Log the packets used to start the connection
 # just to make sure we are not delaying traffic that should not belong here.
-iptables -t mangle -A POSTROUTING -m limit --limit 5/min -j LOG \
-     	--log-prefix "iptables-bulk: "
+iptables -t mangle -A POSTROUTING -m state --state NEW -m limit --limit 5/min \
+	-j LOG --log-prefix "iptables-bulk: "
 iptables -t mangle -A POSTROUTING -j SET_BULK
