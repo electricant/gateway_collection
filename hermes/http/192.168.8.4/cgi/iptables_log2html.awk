@@ -3,7 +3,8 @@ BEGIN { i = 1; }
 	a[i] = $0;
 
 	# The first item in dmesg -T is always a timestamp.
-	tstamp[i] =  $1 " " $2 " " $3 " " $4 "]";
+	#tstamp[i] = $1 " " $2 " " $3 " " $4 "]";
+	tstamp[i] = $2 " " $3 " " $4;
 
 	split($0, tokens, " "); # I'd like to know the total nr. of tokens
 	
