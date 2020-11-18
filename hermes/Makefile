@@ -18,6 +18,7 @@ get-all:
 
 	# Getting config files...
 	@scp $(HOST):/etc/thttpd.conf config/
+	@scp $(HOST):/etc/ssh/sshd_config config/
 	@scp $(HOST):/etc/iptables/iptables.rules config/
 	@scp $(HOST):/etc/vnstat.conf config/
 	@scp $(HOST):/boot/config.txt config/
