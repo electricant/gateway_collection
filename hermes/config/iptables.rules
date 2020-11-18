@@ -24,15 +24,21 @@ COMMIT
 -A INPUT -j SIMPLE-FIREWALL
 
 -A FORWARD -p ipv6 -j ACCEPT
+-A FORWARD -o eth1 -d 0.0.0.0/8 -j LOGDROP
+-A FORWARD -o eth1 -d 10.0.0.0/8 -j LOGDROP
+-A FORWARD -o eth1 -d 127.0.0.0/8 -j LOGDROP
+-A FORWARD -o eth1 -d 192.168.8.1 -j ACCEPT
+-A FORWARD -o eth1 -d 192.168.0.0/16 -j LOGDROP
 -A FORWARD -s 192.168.8.0/24 -j ACCEPT
--A FORWARD -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
--A FORWARD -p udp -m conntrack --ctstate NEW -j UDP-FW
+-A FORWARD -i eth1 -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
+-A FORWARD -i eth1 -p udp -m conntrack --ctstate NEW -j UDP-FW
 -A FORWARD -j SIMPLE-FIREWALL
 
 -A SIMPLE-FIREWALL -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A SIMPLE-FIREWALL -p tcp --tcp-flags ALL NONE -j LOGDROP
 -A SIMPLE-FIREWALL -m conntrack --ctstate INVALID -j LOGDROP
 -A SIMPLE-FIREWALL -p icmp -m conntrack --ctstate NEW -j ACCEPT
+-A SIMPLE-FIREWALL -p tcp --tcp-flags ALL NONE -j LOGDROP
+-A SIMPLE-FIREWALL -p tcp --tcp-flags ALL ALL -j LOGDROP
 -A SIMPLE-FIREWALL -m limit --limit 4/min -j LOG --log-prefix "iptables-dropped(polite): "
 -A SIMPLE-FIREWALL -p udp -j REJECT --reject-with icmp-port-unreachable
 -A SIMPLE-FIREWALL -p tcp -j REJECT --reject-with tcp-reset
