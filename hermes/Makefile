@@ -1,6 +1,6 @@
 #
 # Makefile to fetch files from kharon
-HOST=root@192.168.8.2
+HOST=root@192.168.8.4
 
 get-all:
 	# Getting HTTP gui files...
