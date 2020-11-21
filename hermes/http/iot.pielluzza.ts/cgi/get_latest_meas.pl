@@ -34,10 +34,11 @@ print $query->header(-type => 'text/json', -charset => 'utf-8');
 
 print "{\n";
 
-# Filenames are in the form <node name>.csv. So scan SAVE_DIR to list them
-opendir(my $savedir, SAVE_DIR) or die $!;
-my @files = readdir($savedir);
-closedir($savedir);
+my @sensors = $query->param('keywords');
+
+# Filenames are in the form <node name>.csv.
+# If no sensor has been specified return data for all of them.
+my @files = (@sensors) ? map { "$_.csv" } @sensors : list_files_in_SAVE_DIR(); 
 
 my $isFirst = 1; # JSON requires no comma at the end of the last element
 foreach (@files) {
@@ -66,3 +67,14 @@ foreach (@files) {
 }
 
 print "\n}\n";
+exit(0);
+
+# List all files inside SAVE_DIR
+sub list_files_in_SAVE_DIR
+{
+	opendir(my $savedir, SAVE_DIR) or die $!;
+	my @files = readdir($savedir);
+	closedir($savedir);
+	return @files;
+}
+

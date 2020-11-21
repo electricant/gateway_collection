@@ -69,7 +69,7 @@
 		placeDygraph("graphdiv2", "cgi/get_last_week.pl?cece-fuori");
 
 		// Read latest temperature measurements and place them in the page
-	    	fetch("/cgi/get_latest_meas.pl")
+	    	fetch("/cgi/get_latest_meas.pl?cece-stanza+cece-fuori")
 			.then(res => res.json())
 			.then((o) => {
 				console.log('cece-stanza', o['cece-stanza']);
@@ -77,14 +77,27 @@
 
 				var hStanza = document.getElementById("hStanza");
 			
-				hStanza.innerText += " (T: " + o['cece-stanza'].temp + "°C"
-				hStanza.innerText += ", H: " + o['cece-stanza'].rhum + "%)";
+				hStanza.innerText += " (T: " +
+							   round(o['cece-stanza'].temp, 1)
+							   + "°C"
+				hStanza.innerText += ", H: " + 
+							   round(o['cece-stanza'].rhum, 1)
+							   + "%)";
 
 				var hFuori = document.getElementById("hFuori");
 	
-				hFuori.innerText += " (T: " + o['cece-fuori'].temp + "°C"
-				hFuori.innerText += ", H: " + o['cece-fuori'].rhum + "%)";
+				hFuori.innerText += " (T: " +
+							  round(o['cece-fuori'].temp, 1)
+							  + "°C"
+				hFuori.innerText += ", H: " + 
+							  round(o['cece-fuori'].rhum, 1)
+							  + "%)";
 			}).catch(err => { throw err });
+
+		function round(number, decimals) {
+			return Number(Math.round(number + "e" + decimals) + 
+						"e-" + decimals)
+		}
 	</script>
 </body>
 </html>
