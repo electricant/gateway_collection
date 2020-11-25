@@ -50,7 +50,8 @@ tc_setup eth1 $SPEED_UP dual-srchost
 # best-effort services, then mark the rest as bulk.
 iptables -t mangle -F POSTROUTING
 
-# Low-latency high priority services & packets are marked as 10
+# Low-latency high priority services & packets are marked as 10.
+# Those packets bypass the shaping rules completely. Use this sparingly.
 if iptables -t mangle -N NO_SHAPE ; then
 	iptables -t mangle -A NO_SHAPE -j MARK --set-mark 10
 	iptables -t mangle -A NO_SHAPE -j ACCEPT # skip other rules
@@ -107,6 +108,10 @@ iptables -t mangle -A POSTROUTING -p tcp -m multiport --sports 80,443 \
 # Leave alone all the packets that already have a TOS/DSCP class set.
 # NOTE: DSCP is a subset/extension of TOS, no need to match it.
 iptables -t mangle -A POSTROUTING -m tos ! --tos 0 -j ACCEPT
+
+# SSH connections should be marked as best effort (if not already marked)
+iptables -t mangle -A POSTROUTING -p tcp --dport 22 -j ACCEPT
+iptables -t mangle -A POSTROUTING -p tcp --sport 22 -j ACCEPT
 
 # Everything else is sent to bulk. Log the packets used to start the connection
 # just to make sure we are not delaying traffic that should not belong here.
