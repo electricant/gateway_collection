@@ -6,10 +6,8 @@ use utf8;
 use CGI;
 use File::ReadBackwards;
 
-###
-# Constant definitions
-###
-use constant SAVE_DIR => '/srv/http/iot.pielluzza.ts/data';
+# Load configuration file
+BEGIN { require "./config.pl"; }
 
 ###
 # Main
@@ -36,15 +34,16 @@ print "{\n";
 
 my @sensors = $query->param('keywords');
 
-# Filenames are in the form <node name>.csv.
-# If no sensor has been specified return data for all of them.
-my @files = (@sensors) ? map { "$_.csv" } @sensors : list_files_in_SAVE_DIR(); 
+# Filenames are in the form <node name>.csv. TEMP_DIR contains the latest data,
+# but SAVE_DIR has the complete list of nodes.
+# If no sensor has been specified in the request, return data for all of them.
+my @files = (@sensors) ? map { "$_.csv" } @sensors : list_dir_files(SAVE_DIR); 
 
 my $isFirst = 1; # JSON requires no comma at the end of the last element
 foreach (@files) {
 	next if (($_ eq '.') || ($_ eq '..'));
 	
-	my $bw = File::ReadBackwards->new(SAVE_DIR . '/' . $_) or die $!;
+	my $bw = File::ReadBackwards->new(TEMP_DIR . "/$_") or next;
 	my $lastline = $bw->readline();
 	$bw->close();
 
@@ -69,12 +68,12 @@ foreach (@files) {
 print "\n}\n";
 exit(0);
 
-# List all files inside SAVE_DIR
-sub list_files_in_SAVE_DIR
+# List all files inside the specified directory
+sub list_dir_files
 {
-	opendir(my $savedir, SAVE_DIR) or die $!;
-	my @files = readdir($savedir);
-	closedir($savedir);
+	opendir(my $dir, $_[0]) or die "Could not open '$_[0]': $!\n";
+	my @files = readdir($dir);
+	closedir($dir);
 	return @files;
 }
 

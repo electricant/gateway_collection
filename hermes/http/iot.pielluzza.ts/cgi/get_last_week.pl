@@ -7,12 +7,12 @@ use utf8;
 use CGI;
 use File::ReadBackwards;
 
-###
+# Load configuration file
+BEGIN { require "./config.pl"; }
+
 # Constant definitions
-###
-use constant SAVE_DIR => '/srv/http/iot.pielluzza.ts/data';
 use constant HOURS_PER_WEEK => 168;
-use constant NUM_LINES => 2*HOURS_PER_WEEK;
+use constant NUM_LINES => HOURS_PER_WEEK * int(60 / SAVE_INTERVAL_MIN);
 
 ###
 # Main

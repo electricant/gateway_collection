@@ -5,9 +5,10 @@ use warnings;
 use POSIX;
 use utf8;
 use CGI;
-use Data::Dumper;
+#use Data::Dumper;
 
-use constant SAVE_DIR => '/srv/http/iot.pielluzza.ts/data';
+# Load configuration file
+BEGIN { require "./config.pl"; }
 
 ###
 # Main
@@ -21,11 +22,12 @@ print $query->header(-type => 'text/plain', -charset => 'utf-8');
 # This lets the sending device close the connection and go to sleep earlier
 my $pid = fork();
 if( $pid == 0 ) {
-      # Inside here lives the child process
+	# Inside here lives the child process
 
-      # Close all standard filehandles to tell the server we are done
+	# Close all standard filehandles to tell the http server we are done
       for my $handle (*STDIN, *STDOUT, *STDERR) {
-            open($handle, "+<", "/dev/null") || die "can't reopen $handle to /dev/null: $!";
+            open($handle, "+<", "/dev/null")
+			or die "can't reopen $handle to /dev/null: $!";
       } #docstore.mik.ua/orelly/perl4/cook/ch17_18.htm
 
       # Create a new session for our code to run
@@ -59,14 +61,41 @@ sub forked_task {
 	#print Dumper(keys %{$decoded});
 	#print Dumper(values %{$decoded});
 
-	my $filename = SAVE_DIR . "/" . $decoded->{'ID'} . ".csv";
-	open(my $fh, '>>', $filename)	or die "Could not open file '$filename'";
+	my $timestamp = time();
+	my $temp_read = $decoded->{'temp'};
+	my $rhum_read = $decoded->{'rhum'};
+	my $filename = $decoded->{'ID'} . ".csv";
+	my $temp_path = TEMP_DIR . '/' . $filename;
+	my $save_path = SAVE_DIR . '/' . $filename;
 
-	# Output data as CSV:
+	# Read first measurement from temporary file and extract timestamp
+	my $fh = undef; # Filehandle
+	my $first_timestamp = $timestamp; # If $temp_path does not exist then
+	                                  # this is the first timestamp
+	if (-e $temp_path)
+	{
+		open($fh, '<', $temp_path) or die "Could not open file '$filename'";
+		my @firstline = split(',', readline($fh));
+		$first_timestamp = $firstline[0];
+	}
+	
+	# Formatted output data as CSV:
 	# 	UNIX epoch,Human date and time,temperature,humidity
-	print $fh time() . ',' . strftime("%a_%F_%X", gmtime()) . ',';
-	print $fh "$decoded->{'temp'},$decoded->{'rhum'}\n";
-
+	my $csvstr = "$timestamp," . strftime("%a_%F_%X", localtime($timestamp)) .
+		",$temp_read,$rhum_read\n";
+	
+	# If timestamp delta is greater or equal than SAVE_INTERVAL_MIN then save
+	# to $save_path and empty $temp_path
+	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
+	{
+		open($fh, '>>', $save_path)
+			or die "Could not open file '$filename'";
+		print $fh $csvstr;
+		truncate($temp_path, 0);
+	}
+	
+	open($fh, '>>', $temp_path) or die "Could not open file '$filename'";
+	print $fh $csvstr;
 	close $fh;
 }
 
