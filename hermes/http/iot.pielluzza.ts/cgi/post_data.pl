@@ -68,6 +68,11 @@ sub forked_task {
 	my $temp_path = TEMP_DIR . '/' . $filename;
 	my $save_path = SAVE_DIR . '/' . $filename;
 
+	if ($rhum_read > 100)
+	{
+		die "Invalid data received.";
+	}
+
 	# Read first measurement from temporary file and extract timestamp
 	my $fh = undef; # Filehandle
 	my $first_timestamp = $timestamp; # If $temp_path does not exist then
