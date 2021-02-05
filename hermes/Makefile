@@ -15,9 +15,11 @@ get-all:
 	# Getting service files...
 	@scp $(HOST):/usr/lib/systemd/system/traffic_shaping.service services/
 	@scp $(HOST):/etc/systemd/system/var_log_overlay.service services/
+	@scp $(HOST):/etc/systemd/system/sensor_logger.service services/
 
 	# Getting config files...
 	@scp $(HOST):/etc/thttpd.conf config/
+	@scp $(HOST):/etc/systemd/network/* config/systemd-networkd/
 	@scp $(HOST):/etc/ssh/sshd_config config/
 	@scp $(HOST):/etc/iptables/iptables.rules config/
 	@scp $(HOST):/etc/vnstat.conf config/
@@ -26,4 +28,5 @@ get-all:
 	@scp $(HOST):/etc/unbound/unbound.conf config/
 	@scp $(HOST):/etc/ntp.conf config/
 	@scp $(HOST):/etc/sysctl.d/* config/sysctl/
-	@scp $(HOST):/etc/systemd/network/* config/systemd-networkd/
+	@scp $(HOST):/home/alarm/.bashrc config/
+	@scp $(HOST):/etc/mosquitto/mosquitto.conf config/

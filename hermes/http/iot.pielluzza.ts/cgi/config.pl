@@ -2,6 +2,12 @@
 # Configuration file for the IoT backend
 #
 
+# URL for the MQTT broker to listen to
+use constant MQTT_BROKER => 'localhost';
+
+# MQTT topic to subsribe to for logging purposes
+use constant MQTT_LOG_TOPIC => 'pielluzza/sensors/+';
+
 # Directory where the sensor readings are saved
 # Each sensor will have its own filename called <ID>.csv inside here
 use constant SAVE_DIR => '/srv/http/iot.pielluzza.ts/data';
