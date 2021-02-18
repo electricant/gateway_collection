@@ -18,5 +18,10 @@ use constant SAVE_INTERVAL_MIN => 30;
 # Temporary directory used to store data before writing it to SAVE_DIR
 use constant TEMP_DIR => '/tmp';
 
+# JSON file where the forward table for the various topic is stored
+# Its content is of the type:
+# { 'topic_name' : { 'key' : 'topic to forward value(key) to', ...}, ...}
+use constant FORWARD_FILE => SAVE_DIR . '/forward.conf.json';
+
 1; # Do not remove this. Otherwhise this file will not work as expected.
 # https://stackoverflow.com/questions/5964594/perl-constant-require

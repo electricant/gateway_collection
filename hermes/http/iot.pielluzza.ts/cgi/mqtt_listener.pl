@@ -6,7 +6,7 @@ use JSON;
 use POSIX;
 use utf8;
 use Net::MQTT::Simple;
-#use Data::Dumper;
+use Data::Dumper;
 
 # Load configuration file
 BEGIN { require "./config.pl"; }
@@ -28,8 +28,8 @@ $mqtt->run(
 );
 
 ###
-# This code is responsible for decoding the various messages and send the data
-# to te required file(s).
+# This code is responsible for decoding the various messages and sending the
+# data to the required file(s).
 #
 # Each topic has the following form:
 # 	<whatever>/nodename
@@ -44,7 +44,7 @@ $mqtt->run(
 ###
 sub topic_cb {
 	my($topic, $message) = @_;
-	print "[$topic] $message\n";
+	say "[$topic] $message";
 	
 	my $decoded = decode_json($message);
 	#print Dumper($decoded);
@@ -60,9 +60,12 @@ sub topic_cb {
 
 	if ($rhum_read > 100)
 	{
-		print "Invalid data received.\n";
+		warn "Invalid data received";
 		return; # do not save
 	}
+
+	# Forward the message as needed
+	forwardMsg($topic, $decoded);
 
 	# Read first measurement from temporary file and extract timestamp
 	my $fh = undef; # Filehandle
@@ -95,3 +98,42 @@ sub topic_cb {
 	close $fh;
 }
 
+###
+# Describe me
+###
+sub forwardMsg {
+	my ($srcTopic, $srcMsgDecoded) = @_;
+	# Store the last modified time for the forward file as a state variable
+	# Its value will be kept upon different function invocation
+	state $lastMtime = 0;
+	# Also the forward table is kept as a state, since we do not want to
+	# reload it every time this function is called, but only when modified
+	state $forwardTable;
+
+	# Return if the config file does not exist or cannot be read
+	my $fh;
+	if(!open($fh, '<:unix', FORWARD_FILE)) {
+		warn "Could not open " . FORWARD_FILE . ". Forwarding aborted";
+     		return;	     
+	}
+
+	# Reload forwarding config file if needed.
+	my $modtime = (stat($fh))[9];
+	if ($modtime > $lastMtime) {
+		read($fh, my $content, -s $fh);
+		$forwardTable = decode_json($content);
+		#say Dumper($forwardTable);
+		$lastMtime = $modtime;
+	}
+
+	# Actual forwarding logic
+	my $forwardRule = $forwardTable->{$srcTopic};
+	#say Dumper($topicToForward);
+	#say Dumper(keys %{$topicToForward});
+	foreach(keys %{$srcMsgDecoded}) {
+		if ($forwardRule->{$_}) {
+			say "$_ -> $forwardRule->{$_}";
+			$mqtt->publish($forwardRule->{$_} => $srcMsgDecoded->{$_});
+		}
+	}
+}
