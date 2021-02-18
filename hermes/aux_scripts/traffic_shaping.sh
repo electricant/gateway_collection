@@ -6,9 +6,9 @@
 set -e
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="16Mbit"
-SPEED_UP="15Mbit"
-RTT="50ms"
+SPEED_DOWN="40Mbit"
+SPEED_UP="32Mbit"
+RTT="45ms"
 
 # Priomap definition for tc-prio. When dequeueing, band 0 is tried first and
 # only if it did not deliver a packet does PRIO try band 1, and so onwards.
