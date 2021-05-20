@@ -1,47 +1,23 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pielluzza IoT Dashboard</title>
-  <!-- dygraphs library http://dygraphs.com/download.html -->
-  <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.js">
-  </script>
-  <link rel="stylesheet"
-	href="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/mvp.css">
-  <!-- <link href="css/style.css" rel="stylesheet" type="text/css"> -->
-</head>
-<body>
+<html><head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Pielluzza IoT Dashboard</title>
+
+	<script src="js/mqttws31.min.js"></script>
+	<script src="js/dygraph.min.js"></script>
+	<link rel="stylesheet" href="css/dygraph.min.css" />
+	<link rel="stylesheet" href="css/mvp.css" />
+	<!-- <link href="css/style.css" rel="stylesheet" type="text/css"> -->
+</head><body>
 	<header>
 		<h1 style="font-size:1.75em">Pielluzza IoT Dashboard</h1>
 		<img src="https://wttr.in/Trieste_1q.png" alt="Weather in Trieste" 
-			width="750">
+									width="750">
 	</header>
 	
 	<main>
-		<section>
-			<header>
-				<h2 id="hSoggiorno" style="font-size:1.25em;">
-					cece-soggiorno:</h2>
-				<p><a href="/data/cece-soggiorno.csv">
-					get complete raw data as CSV</a></p>
-			</header>
-			<div id="graphdivSoggiorno"
-				style="width:100%; height:200px; max-width:500px"></div>
-		</section>
-	
-		<section>
-			<header>
-				<h2 id="hFuori" style="font-size:1.25em;">
-					cece-fuori:</h2>
-				<p><a href="/data/cece-fuori.csv">
-					get complete raw data as CSV</a></p>
-			</header>
-			<div id="graphdiv2"
-			     style="width:100%; height:200px; max-width:500px"></div>
-		</section>
-	
+		<!-- More sections will be added here -->
 		<section>
 			<header>
 				<h2 id="hStanza" style="font-size:1.25em;">
@@ -52,32 +28,53 @@
 	</main>
 
 	<script type="text/javascript">
-//		placeDygraph("graphdiv1", "cgi/get_last_week.pl?cece-stanza");
-		placeDygraph("graphdivSoggiorno",
-					"cgi/get_last_week.pl?cece-soggiorno");
-		placeDygraph("graphdiv2", "cgi/get_last_week.pl?cece-fuori");
+		/**
+		 * Place a section for the sensor identified by "sensorName".
+	     * If such a section already exists do nothing
+	     */
+		function placeSensorSection(sensorName, curTemperature, curHumidity)
+		{
+			if (document.getElementById("h2-"+sensorName)) {
+				console.log("PlaceSensorSection: element exists " + sensorName);
+				return;
+			}
 
-		// Read latest temperature measurements and place them in the page
-	    	fetch("/cgi/get_latest_meas.pl?cece-stanza+cece-fuori+cece-soggiorno")
-			.then(res => res.json())
-			.then((o) => {
-				console.log('cece-stanza', o['cece-stanza']);
-				console.log('cece-fuori', o['cece-fuori']);
-				console.log('cece-soggiorno', o['cece-soggiorno']);
+			var cStr = "<section><header><h2 id=\"h2-" + sensorName + "\"";
+			cStr += " style=\"font-size:1.25em;\">";
+			// https://stackoverflow.com/questions/26653729/insert-no-break-space-by-element-innertext
+			cStr += sensorName + ": (T:\u00a0" + curTemperature + "C";
+			cStr += ",\u00a0H:\u00a0" + curHumidity + "%)</h2>";
+			cStr += "<p><a href=\"/data/" + sensorName + ".csv\">";
+			cStr += "Get complete raw data as CSV</a></p>";
+			cStr += "</header><div id=\"graphdiv-" + sensorName + "\" ";
+			cStr += "style=\"width:100%;height:200px;max-width:500px\">";
+			cStr += "</div></section>";
+			
+			var mainDOM = document.getElementsByTagName("main")[0];
+			mainDOM.insertAdjacentHTML("afterbegin", cStr);
+			console.log("placeSensorSection: h2-" + sensorName + " added.");
 
-				/*var hStanza = document.getElementById("hStanza");
-				displayLatestMeas(hStanza, o['cece-stanza'].temp,
-							o['cece-stanza'].rhum);
-				*/
-				var hSogg = document.getElementById("hSoggiorno");
-				displayLatestMeas(hSogg, o['cece-soggiorno'].temp,
-							o['cece-soggiorno'].rhum);
+			placeDygraph("graphdiv-" + sensorName,
+						 "cgi/get_last_week.pl?" + sensorName);
+		}
 
-				var hFuori = document.getElementById("hFuori");
-				displayLatestMeas(hFuori, o['cece-fuori'].temp, 
-							o['cece-fuori'].rhum);
-			}).catch(err => { throw err });
-		
+		function onConnect() {
+  			console.log("MQTT connected");
+			// discover available sensors
+  			mqtt.subscribe("pielluzza/sensors/+");
+		}
+
+		function onMessageArrived(message) {
+ 			console.log("onMessageArrived:" + message.destinationName
+						+ " -> " + message.payloadString);
+			// we have to keep only the last part of the topic,
+			// which contains the node name
+			var nodeName = message.destinationName.match(/.*\/(.*)/)[1];
+			var jsonPayload = JSON.parse(message.payloadString);
+			placeSensorSection(nodeName, round(jsonPayload.temp, 1),
+						round(jsonPayload.rhum, 1));
+		}
+
 		function zeropad(x) {
 			return (x < 10) ? '0' + x : x;
 		}
@@ -99,7 +96,7 @@
 				axes: { x: {
                   		axisLabelFormatter: function(d, gran, opts) {
 						date = new Date(d * 1000);
-						console.log(date);
+						//console.log(date);
                       			return date.getDate() + "-" 
 							+ (1 + date.getMonth())
 							+ " " + date.getHours() 
@@ -119,14 +116,9 @@
 						"e-" + decimals)
 		}
 
-		function displayLatestMeas(element, temperature, humidity)
-		{
-			temperature = round(temperature, 1);
-			humidity = round(humidity, 1);
-			// https://stackoverflow.com/questions/26653729/insert-no-break-space-by-element-innertext
-			element.textContent += " (T:\u00a0" + temperature +
-						     "°,\u00a0H:\u00a0"+ humidity+ "%)";
-		}
+		var mqtt = new Paho.MQTT.Client("iot.pielluzza.ts", 9001, "wsClient");
+		mqtt.connect({onSuccess:onConnect});
+		mqtt.onMessageArrived = onMessageArrived;
 	</script>
 </body>
 </html>
