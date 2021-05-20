@@ -7,13 +7,14 @@ get-all:
 	@scp -r $(HOST):/srv/http/192.168.8.4 http/
 	@scp -r $(HOST):/srv/http/iot.pielluzza.ts http/
 
-	# Getting various auxiliary scripits...
+	# Getting various auxiliary scripts...
 	@scp $(HOST):/home/alarm/traffic_shaping.sh aux_scripts/
 	@scp $(HOST):/home/alarm/var_log_overlay.sh aux_scripts/
 	@scp $(HOST):/home/alarm/blocklist-update.sh aux_scripts/
 
 	# Getting service files...
 	@scp $(HOST):/usr/lib/systemd/system/traffic_shaping.service services/
+	@scp $(HOST):/usr/lib/systemd/system/mosquitto.service.d/* services/mosquitto.service.d
 	@scp $(HOST):/etc/systemd/system/var_log_overlay.service services/
 	@scp $(HOST):/etc/systemd/system/sensor_logger.service services/
 
