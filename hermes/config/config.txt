@@ -1,6 +1,9 @@
 # See /boot/overlays/README for all available options
 initramfs initramfs-linux.img followkernel
 
+# Do not enable. Will not boot.
+#dtoverlay=vc4-kms-v3d
+
 # Enable te UART for GNSS module
 enable_uart=1
 
@@ -13,7 +16,7 @@ avoid_pwm_pll=1
 
 # Frequencies
 arm_freq=1000
-core_freq=500
-sdram_freq=500
-over_voltage=5
-over_voltage_sdram=2
+core_freq=400
+over_voltage=4
+sdram_freq=450
+#over_voltage_sdram=2
