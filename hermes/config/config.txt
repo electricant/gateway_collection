@@ -4,6 +4,9 @@ initramfs initramfs-linux.img followkernel
 # Do not enable. Will not boot.
 #dtoverlay=vc4-kms-v3d
 
+# Receive PPS on GPIO18
+dtoverlay=pps-gpio,gpiopin=18
+
 # Enable te UART for GNSS module
 enable_uart=1
 
