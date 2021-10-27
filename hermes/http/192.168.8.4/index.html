@@ -30,6 +30,12 @@
 				tltText += "Internet connectivity: Inactive";
 			}
 			tltText += "<br>";
+			if (generalStatus.openvpn == 0) {
+				tltText += "OpenVPN client: Active";
+			} else {
+				tltText += "OpenVPN client: Inactive";
+			}
+			tltText += "<br>";
 			if (generalStatus.dns_server == 0) {
 				tltText += "DNS server: Active";
 			} else {
@@ -151,13 +157,6 @@
 				<td></td> <!-- empty -->
 				<td>
 					<a href="http://iot.pielluzza.ts">[IoT dashboard]</a>
-				</td>
-				<td></td> <!-- empty -->
-				<td>
-					<a href="ftp://192.168.8.5">[FTP server]</a>
-					<br/>
-					User: anon<br/>
-					Pass: dummy
 				</td>
 			</tr>
 		</table>

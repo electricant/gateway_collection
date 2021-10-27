@@ -20,12 +20,18 @@ systemctl is-active --quiet iptables
 iptables_status=$?
 
 # The same as above, just for checking internet connectivity
-ping -q -c 1 -W 0.15 ipol.ml >/dev/null 2>&1
+ping -q -c 1 -W 0.15 scaramuzza.me >/dev/null 2>&1
 internet_status=$?
 
+# If the 'tun0' interface exists then, also openVPN is running
+ip a s | grep -q 'tun0'
+openvpn_status=$?
+
 # If all services above are active then the overall status is good
-overall_status=$((dns_status + iptables_status + internet_status))
+overall_status=$((dns_status + iptables_status + internet_status + \
+	openvpn_status))
 
 # Output headers and data
-echo "{\n\t\"overall\": $overall_status, \"dns_server\": $dns_status," \
-     "\"iptables\": $iptables_status, \"internet_status\": $internet_status\n}"
+echo "{\"overall\": $overall_status, \"dns_server\": $dns_status," \
+     "\"iptables\": $iptables_status, \"internet_status\": $internet_status," \
+     "\"openvpn\": $openvpn_status}"
