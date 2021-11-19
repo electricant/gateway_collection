@@ -34,11 +34,14 @@ $mqtt->run(
 # Each topic has the following form:
 # 	<whatever>/nodename
 #
-# It expects a JSON message of the following kind:+
+# It expects a JSON message of the following kind:
 # {
 #    "temp" : <temp_celsius>,
-#    "rhum" : <humidity_percent>
+#    "rhum" : <humidity_percent>,
+#    "pres" : <ambient_pressure>,
+#    "qual" : <air quality index>
 # }
+# All field are optional except temp.
 #
 # nodename is used as the filename for storing the data as CSV.
 ###
@@ -58,17 +61,68 @@ sub topic_cb {
 	my $temp_path = TEMP_DIR . '/' . $filename;
 	my $save_path = SAVE_DIR . '/' . $filename;
 
+	# Old logic and new logic will coexist for a while. To support many
+	# different sensors, each with its own capabilities, recfiles will be used
+	# in place of CSV files. This allows for greater flexibility and gives us a
+	# set of tried and tested command line tools to operate on those files
+	# The idea is to place each value received from the json message into a
+	# filed with the associated value.
+	my $fh = undef; # Filehandle
+	
+	my $first_timestamp = $timestamp; # If $temp_path does not exist then
+	                                  # this is the first timestamp
+	if (-e ($temp_path . ".rec"))
+	{
+		open($fh, '<', $temp_path . ".rec")
+			or die "Could not open file '$filename'";
+		$first_timestamp = $1 if(readline($fh) =~ /timestamp: (\d+)/);
+	}
+	close $fh;
+
+	# If timestamp delta is greater or equal than SAVE_INTERVAL_MIN then save
+	# to $save_path and empty $temp_path
+	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
+	{
+		truncate("$temp_path.rec", 0);
+		
+		open($fh, '>>', $save_path . ".rec")
+			or die "Could not open file '$save_path'";
+
+		say $fh "timestamp: $timestamp";
+		say $fh "date: " . strftime("%a_%F_%X", localtime($timestamp));
+		# see: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
+		while(my($k, $v) = each %{$decoded})
+		{
+			say $fh "$k: $v";
+		}
+		print $fh "\n"; # Newline ends a record
+		close $fh;
+	}
+
+	open($fh, '>>', $temp_path . ".rec")
+		or die "Could not open file '$filename'";
+
+	say $fh "timestamp: $timestamp";
+	say $fh "date: " . strftime("%a_%F_%X", localtime($timestamp));
+	# see: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
+	while(my($k, $v) = each %{$decoded})
+	{
+		say $fh "$k: $v";
+	}
+	print $fh "\n"; # Newline ends a record
+	close $fh;
+
+	# Forward the message as needed. TODO: move to a different callback that
+	# intercepts any topic, or something like that.
+	forwardMsg($topic, $decoded);
+
 	if ($rhum_read > 100)
 	{
 		warn "Invalid data received";
 		return; # do not save
 	}
 
-	# Forward the message as needed
-	forwardMsg($topic, $decoded);
-
 	# Read first measurement from temporary file and extract timestamp
-	my $fh = undef; # Filehandle
 	my $first_timestamp = $timestamp; # If $temp_path does not exist then
 	                                  # this is the first timestamp
 	if (-e $temp_path)
@@ -93,13 +147,16 @@ sub topic_cb {
 		truncate($temp_path, 0);
 	}
 	
-	open($fh, '>>', $temp_path) or die "Could not open file '$filename'";
+	open($fh, '>>', $temp_path) or die "Could not open file '$temp_path'";
 	print $fh $csvstr;
 	close $fh;
 }
 
 ###
-# Describe me
+# This function read a json config file that acts as a forward table for
+# MQTT topics and messages. The goal is to forward a message from one topic to
+# another. This is useful for example for remote thermostats to receive a
+# temperature from a room that it's not the one they are located into.
 ###
 sub forwardMsg {
 	my ($srcTopic, $srcMsgDecoded) = @_;
