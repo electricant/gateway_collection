@@ -69,6 +69,6 @@ cat $TEMPFILE \
 	| awk 'NF {print "local-zone: \""$1".\" always_nxdomain"}' > $TEMPFILE.unbound
 
 # Install, making sure the new list works bofore reloading
-cp $TEMPFILE.unbound $TARGET
+mv $TEMPFILE.unbound $TARGET
 unbound-checkconf
 systemctl reload unbound
