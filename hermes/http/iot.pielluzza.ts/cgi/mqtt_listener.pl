@@ -28,6 +28,39 @@ $mqtt->run(
 );
 
 ###
+# Helper function to write a record into a specified recfile, containing the
+# sensor data (appending the record to the existing content).
+# Sensor data is passed to write_to_recfile in the form of a dictionary where
+# the key is the name/description of what the associated value represents.
+# Key-value pairs are stored in the recfile as they appear in the dictionary.
+#
+# This function requires the following parameters:
+#	filename  - name of the file where the record will be written to
+#	timestamp - unix timestamp for when the reading appeared
+#	readings  - dictionary with the sensor readings
+#
+# More info about recfiles are available here:
+#	https://www.gnu.org/software/recutils/
+#	https://www.gnu.org/software/recutils/manual/
+###
+sub write_to_recfile
+{
+	my($filename, $timestamp, %readings) = @_;
+
+	open(my $fh, '>>', $filename)
+		or die "Could not open file '$filename': $!.";
+
+	say $fh "timestamp: $timestamp";
+	say $fh "date: " . strftime("%a_%F_%X", localtime($timestamp));
+	while(my($k, $v) = each %readings)
+	{
+		say $fh "$k: $v";
+	}
+	print $fh "\n"; # Newline ends a record
+	close $fh;
+}
+
+###
 # This code is responsible for decoding the various messages and sending the
 # data to the required file(s).
 #
@@ -55,8 +88,6 @@ sub topic_cb {
 	#print Dumper(values %{$decoded});
 
 	my $timestamp = time();
-	my $temp_read = $decoded->{'temp'};
-	my $rhum_read = $decoded->{'rhum'};
 	my $filename =  ($topic =~ m/.*\/(.*)/)[0] . ".csv";
 	my $temp_path = TEMP_DIR . '/' . $filename;
 	my $save_path = SAVE_DIR . '/' . $filename;
@@ -67,55 +98,36 @@ sub topic_cb {
 	# set of tried and tested command line tools to operate on those files
 	# The idea is to place each value received from the json message into a
 	# filed with the associated value.
-	my $fh = undef; # Filehandle
-	
 	my $first_timestamp = $timestamp; # If $temp_path does not exist then
 	                                  # this is the first timestamp
 	if (-e ($temp_path . ".rec"))
 	{
-		open($fh, '<', $temp_path . ".rec")
-			or die "Could not open file '$filename'";
+		open(my $fh, '<', $temp_path . ".rec")
+			or die "Could not open file '$temp_path': $!.";
 		$first_timestamp = $1 if(readline($fh) =~ /timestamp: (\d+)/);
-	}
-	close $fh;
-
-	# If timestamp delta is greater or equal than SAVE_INTERVAL_MIN then save
-	# to $save_path and empty $temp_path
-	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
-	{
-		truncate("$temp_path.rec", 0);
-		
-		open($fh, '>>', $save_path . ".rec")
-			or die "Could not open file '$save_path'";
-
-		say $fh "timestamp: $timestamp";
-		say $fh "date: " . strftime("%a_%F_%X", localtime($timestamp));
-		# see: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
-		while(my($k, $v) = each %{$decoded})
-		{
-			say $fh "$k: $v";
-		}
-		print $fh "\n"; # Newline ends a record
 		close $fh;
 	}
 
-	open($fh, '>>', $temp_path . ".rec")
-		or die "Could not open file '$filename'";
-
-	say $fh "timestamp: $timestamp";
-	say $fh "date: " . strftime("%a_%F_%X", localtime($timestamp));
-	# see: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
-	while(my($k, $v) = each %{$decoded})
+	# If timestamp delta is greater or equal than SAVE_INTERVAL_MIN then save
+	# the last reading to $save_path and empty $temp_path
+	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
 	{
-		say $fh "$k: $v";
+		truncate("$temp_path.rec", 0);
+		# see: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
+		write_to_recfile("$save_path.rec", $timestamp, %{$decoded});
 	}
-	print $fh "\n"; # Newline ends a record
-	close $fh;
+
+	write_to_recfile("$temp_path.rec", $timestamp, %{$decoded});
 
 	# Forward the message as needed. TODO: move to a different callback that
 	# intercepts any topic, or something like that.
 	forwardMsg($topic, $decoded);
 
+	# NOTE: this is the old logic to save sensor data in CSV files.
+	#       To be removed starting from 2022.
+	my $temp_read = $decoded->{'temp'};
+	my $rhum_read = $decoded->{'rhum'};
+	
 	if ($rhum_read > 100)
 	{
 		warn "Invalid data received";
@@ -123,11 +135,11 @@ sub topic_cb {
 	}
 
 	# Read first measurement from temporary file and extract timestamp
-	my $first_timestamp = $timestamp; # If $temp_path does not exist then
+	$first_timestamp = $timestamp; # If $temp_path does not exist then
 	                                  # this is the first timestamp
 	if (-e $temp_path)
 	{
-		open($fh, '<', $temp_path) or die "Could not open file '$filename'";
+		open(my $fh, '<', $temp_path) or die "Could not open file '$filename'";
 		my @firstline = split(',', readline($fh));
 		$first_timestamp = $firstline[0];
 	}
@@ -141,13 +153,13 @@ sub topic_cb {
 	# to $save_path and empty $temp_path
 	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
 	{
-		open($fh, '>>', $save_path)
+		open(my $fh, '>>', $save_path)
 			or die "Could not open file '$filename'";
 		print $fh $csvstr;
 		truncate($temp_path, 0);
 	}
 	
-	open($fh, '>>', $temp_path) or die "Could not open file '$temp_path'";
+	open(my $fh, '>>', $temp_path) or die "Could not open file '$temp_path'";
 	print $fh $csvstr;
 	close $fh;
 }
