@@ -10,7 +10,7 @@
 # Directory containing recfiles
 DATA_DIR='/srv/http/iot.pielluzza.ts/data'
 
-echo "Content-type: text/plain; charset=utf-8"
+echo "Content-type: text/csv; charset=utf-8"
 echo "Connection: close"
 echo ""
 
@@ -20,4 +20,5 @@ echo ""
 name=$(printf '%q' $QUERY_STRING | sed -n 's/^.*name=\([^\&]*\).*$/\1/p')
 ts=$(printf '%q' $QUERY_STRING | sed -n 's/^.*timestamp=\([^\&]*\).*$/\1/p')
 
-recsel -e "timestamp >= $ts" "$DATA_DIR/$name.csv.rec" | rec2csv
+recsel -e "timestamp >= $ts" "$DATA_DIR/$name.csv.rec" | rec2csv \
+	| sed 's/\"//g'

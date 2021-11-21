@@ -53,9 +53,11 @@
 			var mainDOM = document.getElementsByTagName("main")[0];
 			mainDOM.insertAdjacentHTML("afterbegin", cStr);
 			console.log("placeSensorSection: h2-" + sensorName + " added.");
-
+		
+			const unixTime = Math.floor(Date.now() / 1000);
+			getTs = unixTime-(7*24*60*60); // last week
 			placeDygraph("graphdiv-" + sensorName,
-						 "cgi/get_last_week.pl?" + sensorName);
+						 "cgi/getcsv.sh?timestamp="+ getTs + "&name=" + sensorName);
 		}
 
 		function onConnect() {
@@ -83,11 +85,11 @@
 			new Dygraph(document.getElementById(where), data_url,
 			{
 				series : { 
-					"Temperature" : {
+					"temp" : {
 						axis : "y1",
 						color : "red"
 					},
-					"Humidity" : {
+					"rhum" : {
 						axis : "y2",
 						color : "blue",
 						fillGraph: true
