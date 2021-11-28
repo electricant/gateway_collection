@@ -56,8 +56,41 @@
 		
 			const unixTime = Math.floor(Date.now() / 1000);
 			getTs = unixTime-(7*24*60*60); // last week
-			placeDygraph("graphdiv-" + sensorName,
-						 "cgi/getcsv.sh?timestamp="+ getTs + "&name=" + sensorName);
+			
+			// perform GET request for CSV data to be put inside the plots
+			var csvGet = new XMLHttpRequest();
+			csvGet.onreadystatechange = function()
+					{ csvReceived(csvGet, sensorName); };
+			csvGet.open("GET", "cgi/getcsv.sh?timestamp=" + getTs + "&name=" 
+						+ sensorName, true);
+			csvGet.send();
+		}
+
+		function csvReceived(xmlHTTP, sensor) {
+			if (xmlHTTP.readyState != 4)
+						return; // return if request not complete
+
+			if (xmlHTTP.status != 200) {
+				console.error("No valid data received for " + sensor);
+				console.error("Status code: " + xmlHTTP.status);
+				return;
+			}
+			// Trim the data & split it into an array of lines
+			var csvLines = xmlHTTP.responseText.trim().split("\n");
+			// The first line contains labels, separated by commas
+			var labels = csvLines[0].split(",");
+			// From line 1 to the end there's our data. Compile it in a format
+			// dygraphs.js can handle.
+			// See also: https://dygraphs.com/tests/multi-scale.html
+			var data = [];
+			for (i = 1; i < csvLines.length; i++)
+				data.push(csvLines[i].split(",").map(Number));
+			// Finally, to make plots nicer we need to scale pressure readings
+			var presIndex = labels.indexOf("pres");
+			for (i = 0; i < data.length; i++)
+				data[i][presIndex] /= 50;
+
+			placeDygraph("graphdiv-" + sensor, data, labels);
 		}
 
 		function onConnect() {
@@ -67,7 +100,7 @@
 		}
 
 		function onMessageArrived(message) {
- 			console.log("onMessageArrived:" + message.destinationName
+ 			console.log("onMessageArrived: " + message.destinationName
 						+ " -> " + message.payloadString);
 			// we have to keep only the last part of the topic,
 			// which contains the node name
@@ -81,35 +114,45 @@
 			return (x < 10) ? '0' + x : x;
 		}
 
-		function placeDygraph(where, data_url) {
-			new Dygraph(document.getElementById(where), data_url,
+		function placeDygraph(where, data, labels) {
+			var seriesConf = { "temp" : { axis : "y1",
+						                  color : "red" },
+					           "rhum" : { axis : "y2",
+					           			  color : "blue",
+					           			  fillGraph: true },
+					           "qual" : { axis : "y2",
+					           			  color: "green" },
+					           "pres" : { axis : "y1",
+					           			  color: "goldenrod",
+					           		      fillGraph: true}
+			                 };
+			new Dygraph(document.getElementById(where), data,
 			{
-				series : { 
-					"temp" : {
-						axis : "y1",
-						color : "red"
-					},
-					"rhum" : {
-						axis : "y2",
-						color : "blue",
-						fillGraph: true
-					}
-				},
-				axes: { x: {
-                  		axisLabelFormatter: function(d, gran, opts) {
-						date = new Date(d * 1000);
-						//console.log(date);
-                      			return date.getDate() + "-" 
-							+ (1 + date.getMonth())
-							+ " " + date.getHours() 
-							+ ":" + zeropad(date.getMinutes());
-                  		}
-				}},
+				labels : labels,
+				series : seriesConf,
+				axes: { x : {
+							axisLabelFormatter : function(d, gran, opts) {
+								date = new Date(d * 1000);
+								//console.log(date);
+								return date.getDate() + "-" 
+									+ (1 + date.getMonth())
+									+ " " + date.getHours() 
+									+ ":" + zeropad(date.getMinutes());
+							}
+                  		},
+				        y : { // https://dygraphs.com/tests/multi-scale.html
+							valueFormatter : function(y, opts, sname) {
+								if (sname == 'pres')
+									return round(y * 50, 1); // 1000 / 50 = 20;
+								else
+									return y;
+							}
+				        }
+                  	},
 				ylabel : 'Temperature',
 				y2label : 'Humidity',
 				showRangeSelector: true,
 				drawGapEdgePoints: true,
-				rollPeriod: 2
 			});
 		}
 
