@@ -1,21 +1,15 @@
 # See /boot/overlays/README for all available options
+dtoverlay=vc4-kms-v3d
 initramfs initramfs-linux.img followkernel
-
-# Do not enable. Will not boot.
-#dtoverlay=vc4-kms-v3d
 
 # Receive PPS on GPIO18
 dtoverlay=pps-gpio,gpiopin=18
-
-# Enable te UART for GNSS module
-enable_uart=1
 
 # Give the least possible amount of memory for the GPU
 gpu_mem=16
 
 # Overclock options
 force_turbo=1
-avoid_pwm_pll=1
 
 # Frequencies
 arm_freq=1000
@@ -23,3 +17,4 @@ core_freq=400
 over_voltage=4
 sdram_freq=450
 #over_voltage_sdram=2
+
