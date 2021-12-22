@@ -86,10 +86,14 @@
 			for (i = 1; i < csvLines.length; i++)
 				data.push(csvLines[i].split(",").map(Number));
 			// Finally, to make plots nicer we need to scale pressure readings
+			// The standard pressure value is 1013hPa. For better readability,
+			// we want to map it to 21 deg while 950hPa is mapped to 0 deg
 			var presIndex = labels.indexOf("pres");
-			for (i = 0; i < data.length; i++)
-				data[i][presIndex] /= 50;
-
+			for (i = 0; i < data.length; i++) {
+				if (data[i][presIndex] == 0)
+					continue;
+				data[i][presIndex] = (data[i][presIndex] - 950) / 3;
+			}
 			placeDygraph("graphdiv-" + sensor, data, labels);
 		}
 
@@ -143,7 +147,7 @@
 				        y : { // https://dygraphs.com/tests/multi-scale.html
 							valueFormatter : function(y, opts, sname) {
 								if (sname == 'pres')
-									return round(y * 50, 1); // 1000 / 50 = 20;
+									return round(y*3 + 950, 1);
 								else
 									return y;
 							}
