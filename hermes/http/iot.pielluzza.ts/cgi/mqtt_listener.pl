@@ -21,10 +21,11 @@ my $mqtt = Net::MQTT::Simple->new(MQTT_BROKER);
 # Dispatch table syntax taken from here:
 # https://stackoverflow.com/questions/7237746/how-do-you-create-a-callback-function-dispatch-table-in-perl-using-hashes
 #
-# MQTT_LOG_TOPIC has to be treated like a function in this scenario. See:
-# https://perldoc.perl.org/constant#CAVEATS
+# MQTT_LOG_TOPIC & MQTT_FORWARD_TOPIC have to be treated like a function in this
+# scenario. See: https://perldoc.perl.org/constant#CAVEATS
 $mqtt->run(
-	MQTT_LOG_TOPIC() => \&topic_cb,
+	MQTT_LOG_TOPIC()     => \&topic_cb,
+	MQTT_FORWARD_TOPIC() => \&forwardMsg,
 );
 
 ###
@@ -80,7 +81,7 @@ sub write_to_recfile
 ###
 sub topic_cb {
 	my($topic, $message) = @_;
-	say "[$topic] $message";
+	say "[topic_cb] $topic -> $message";
 	
 	my $decoded = decode_json($message);
 	#print Dumper($decoded);
@@ -118,10 +119,6 @@ sub topic_cb {
 	}
 
 	write_to_recfile("$temp_path.rec", $timestamp, %{$decoded});
-
-	# Forward the message as needed. TODO: move to a different callback that
-	# intercepts any topic, or something like that.
-	forwardMsg($topic, $decoded);
 
 	# NOTE: this is the old logic to save sensor data in CSV files.
 	#       To be removed starting from 2022.
@@ -171,13 +168,15 @@ sub topic_cb {
 # temperature from a room that it's not the one they are located into.
 ###
 sub forwardMsg {
-	my ($srcTopic, $srcMsgDecoded) = @_;
+	my($topic, $message) = @_;
+	say "[forwardMsg] $topic -> $message";
+	
 	# Store the last modified time for the forward file as a state variable
 	# Its value will be kept upon different function invocation
 	state $lastMtime = 0;
 	# Also the forward table is kept as a state, since we do not want to
 	# reload it every time this function is called, but only when modified
-	state $forwardTable;
+	state @forwardTable;
 
 	# Return if the config file does not exist or cannot be read
 	my $fh;
@@ -190,19 +189,18 @@ sub forwardMsg {
 	my $modtime = (stat($fh))[9];
 	if ($modtime > $lastMtime) {
 		read($fh, my $content, -s $fh);
-		$forwardTable = decode_json($content);
-		#say Dumper($forwardTable);
+		@forwardTable = @{decode_json($content)};
 		$lastMtime = $modtime;
 	}
 
 	# Actual forwarding logic
-	my $forwardRule = $forwardTable->{$srcTopic};
-	#say Dumper($topicToForward);
-	#say Dumper(keys %{$topicToForward});
-	foreach(keys %{$srcMsgDecoded}) {
-		if ($forwardRule->{$_}) {
-			say "$_ -> $forwardRule->{$_}";
-			$mqtt->publish($forwardRule->{$_} => $srcMsgDecoded->{$_});
+	foreach (@forwardTable) {
+		my %hash = %{$_};
+
+		if ($hash{'decision-topic'} eq $topic) {
+			$mqtt->publish($hash{'relay-topic'} => $message);
+			say "$topic forwarded to $hash{'relay-topic'}";
 		}
 	}
 }
+
