@@ -75,9 +75,11 @@ sub write_to_recfile
 #    "pres" : <ambient_pressure>,
 #    "qual" : <air quality index>
 # }
-# All field are optional except temp.
+# All fields are optional except for 'temp'.
 #
-# nodename is used as the filename for storing the data as CSV.
+# nodename is used as the filename for storing the data.
+#
+# See also: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
 ###
 sub topic_cb {
 	my($topic, $message) = @_;
@@ -89,21 +91,19 @@ sub topic_cb {
 	#print Dumper(values %{$decoded});
 
 	my $timestamp = time();
-	my $filename =  ($topic =~ m/.*\/(.*)/)[0] . ".csv";
+	my $filename =  ($topic =~ m/.*\/(.*)/)[0] . ".rec";
 	my $temp_path = TEMP_DIR . '/' . $filename;
 	my $save_path = SAVE_DIR . '/' . $filename;
 
-	# Old logic and new logic will coexist for a while. To support many
-	# different sensors, each with its own capabilities, recfiles will be used
-	# in place of CSV files. This allows for greater flexibility and gives us a
-	# set of tried and tested command line tools to operate on those files
-	# The idea is to place each value received from the json message into a
-	# filed with the associated value.
+	# To allow for different sensors, each with its own capabilities, recfiles
+	# have been used. This gives us a set of tried and tested command line tools
+	# to operate on those files. Each value received from the json message is
+	# placed into a field named the same way as in the json message.
 	my $first_timestamp = $timestamp; # If $temp_path does not exist then
 	                                  # this is the first timestamp
-	if (-e ($temp_path . ".rec"))
+	if (-e $temp_path)
 	{
-		open(my $fh, '<', $temp_path . ".rec")
+		open(my $fh, '<', $temp_path)
 			or die "Could not open file '$temp_path': $!.";
 		$first_timestamp = $1 if(readline($fh) =~ /timestamp: (\d+)/);
 		close $fh;
@@ -113,52 +113,11 @@ sub topic_cb {
 	# the last reading to $save_path and empty $temp_path
 	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
 	{
-		truncate("$temp_path.rec", 0);
-		# see: https://stackoverflow.com/questions/25950359/decoding-and-using-json-data-in-perl
-		write_to_recfile("$save_path.rec", $timestamp, %{$decoded});
-	}
-
-	write_to_recfile("$temp_path.rec", $timestamp, %{$decoded});
-
-	# NOTE: this is the old logic to save sensor data in CSV files.
-	#       To be removed starting from 2022.
-	my $temp_read = $decoded->{'temp'};
-	my $rhum_read = $decoded->{'rhum'};
-	
-	if ($rhum_read > 100)
-	{
-		warn "Invalid data received";
-		return; # do not save
-	}
-
-	# Read first measurement from temporary file and extract timestamp
-	$first_timestamp = $timestamp; # If $temp_path does not exist then
-	                                  # this is the first timestamp
-	if (-e $temp_path)
-	{
-		open(my $fh, '<', $temp_path) or die "Could not open file '$filename'";
-		my @firstline = split(',', readline($fh));
-		$first_timestamp = $firstline[0];
-	}
-	
-	# Formatted output data as CSV:
-	# 	UNIX epoch,Human date and time,temperature,humidity
-	my $csvstr = "$timestamp," . strftime("%a_%F_%X", localtime($timestamp)) .
-		",$temp_read,$rhum_read\n";
-	
-	# If timestamp delta is greater or equal than SAVE_INTERVAL_MIN then save
-	# to $save_path and empty $temp_path
-	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
-	{
-		open(my $fh, '>>', $save_path)
-			or die "Could not open file '$filename'";
-		print $fh $csvstr;
 		truncate($temp_path, 0);
+		write_to_recfile($save_path, $timestamp, %{$decoded});
 	}
-	
-	open(my $fh, '>>', $temp_path) or die "Could not open file '$temp_path'";
-	print $fh $csvstr;
-	close $fh;
+
+	write_to_recfile($temp_path, $timestamp, %{$decoded});
 }
 
 ###
