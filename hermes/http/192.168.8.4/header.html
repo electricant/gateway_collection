@@ -89,77 +89,19 @@
 	<div class="header">
 	<div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
       	<a class="pure-menu-heading" style="text-decoration: underline"
-			href="">Hermes</a>
+			href="/index.cgi">Hermes</a>
 		
 		<ul class="pure-menu-list">
-            	<li class="pure-menu-item">
+       <!--     	<li class="pure-menu-item">
 				<a href="/connection.html" class="pure-menu-link">
 					Connection
-				</a>
-			</li>
+				</a></li>
+	   -->
             	<li class="pure-menu-item">
-				<a href="/misc.html" class="pure-menu-link">
+				<a href="/misc.cgi" class="pure-menu-link">
 					Miscellaneous
 				</a>
 			</li>
         	</ul>
 	</div>
 	</div>
-	
-	<div class="content-wrapper">
-		<h2>Overall Status</h2>
-		<button class="pure-button tooltip">
-			<i id="statusIcon" class="fa fa-spinner"></i>
-			<span id="statusTooltip" class="tooltiptext">Loading...</span>
-		</button>
-
-		<h2>Internet Connection</h2>
-		<p><a href="http://192.168.8.1/html/statistic.html">[Statistics]</a></p>
-		<img src="/cgi/vnstat.pl?0-hg" alt="Hourly graph">
-		<img src="/cgi/vnstat.pl?0-s" alt="Summary">
-
-		<h2>Network Topology</h2>
-		<table style="width:600px;text-align:center;font-family:monospace;">
-			<tr>
-				<td>
-					<i class="fas fa-broadcast-tower"></i>
-					<br/>
-					<b>Huawei E3372</b>
-					<br/>
-					<a href="http://192.168.8.1">[192.168.8.1]</a>
-				</td>
-				<td>
-					<i class="fab fa-usb"></i>
-					<br/>
-					<==>
-				</td>
-				<td>
-					<i class="fab fa-raspberry-pi"></i>
-					<br/>
-					<b>Raspberry Pi</b>
-					<br/>
-					<a href="http://192.168.8.4">[192.168.8.4]</a>
-				</td>
-				<td>
-					<i class="fas fa-ethernet"></i>
-					<br/>
-					<==>
-				</td>
-				<td>
-					<i class="fas fa-wifi"></i>
-					<br/>
-					<b>Wi-Fi</b>
-					<br/>
-					<a href="http://192.168.8.5">[192.168.8.5]</a>
-				</td>
-			</tr><tr>
-				<td></td> <!-- empty -->
-				<td></td> <!-- empty -->
-				<td>
-					<a href="http://iot.pielluzza.ts">[IoT dashboard]</a>
-				</td>
-			</tr>
-		</table>
-	</div>
-</body>
-</html>
