@@ -20,5 +20,5 @@ echo ""
 name=$(printf '%q' $QUERY_STRING | sed -n 's/^.*name=\([^\&]*\).*$/\1/p')
 ts=$(printf '%q' $QUERY_STRING | sed -n 's/^.*timestamp=\([^\&]*\).*$/\1/p')
 
-recsel -e "timestamp >= $ts" "$DATA_DIR/$name.csv.rec" | rec2csv \
+recsel -e "timestamp >= $ts" "$DATA_DIR/$name.rec" | rec2csv \
 	| sed 's/\"//g'
