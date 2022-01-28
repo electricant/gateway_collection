@@ -20,6 +20,7 @@ get-all:
 
 	# Getting config files...
 	@scp $(HOST):/etc/thttpd.conf config/
+	@scp $(HOST):/etc/dnsmasq.conf config/
 	@scp $(HOST):/etc/systemd/network/* config/systemd-networkd/
 	@scp $(HOST):/etc/ssh/sshd_config config/
 	@scp $(HOST):/etc/iptables/iptables.rules config/
