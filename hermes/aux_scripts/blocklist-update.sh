@@ -2,7 +2,6 @@
 #
 # Simple script to update the DNS blocklist for unbound
 #
-
 set -e # Exit when any command fails
 
 # Lists to pull the hosts from
@@ -10,22 +9,20 @@ set -e # Exit when any command fails
 # See also:
 #	https://firebog.net/
 #	https://www.github.developerdan.com/hosts/
-SOURCES=("https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Dead/hosts"
-	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts"
-	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/UncheckyAds/hosts"
-	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Risk/hosts"
-	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/CoinBlockerList/hosts"
-	   "https://raw.githubusercontent.com/FadeMind/hosts.extras/master/osint.digitalside.it/hosts"
-	   "https://raw.githubusercontent.com/llacb47/mischosts/master/social/tiktok-block"
-	   "https://raw.githubusercontent.com/llacb47/mischosts/master/microsoft-telemetry"
-	   "https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt"
-	   "https://raw.githubusercontent.com/DandelionSprout/adfilt/master/Alternate%20versions%20Anti-Malware%20List/AntiMalwareHosts.txt"
-	   "https://someonewhocares.org/hosts/hosts"
+SOURCES=("https://someonewhocares.org/hosts/hosts"
+	"https://pgl.yoyo.org/as/serverlist.php?hostformat=hosts;showintro=0"
+	"https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Risk/hosts"
+	"https://raw.githubusercontent.com/FadeMind/hosts.extras/master/CoinBlockerList/hosts"
+	"https://raw.githubusercontent.com/llacb47/mischosts/master/social/tiktok-block"
+	"https://raw.githubusercontent.com/llacb47/mischosts/master/microsoft-telemetry"
+	"https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt"
+	"https://raw.githubusercontent.com/DandelionSprout/adfilt/master/Alternate%20versions%20Anti-Malware%20List/AntiMalwareHosts.txt"
 # Too many hostnames!
-	   "https://phishing.army/download/phishing_army_blocklist.txt"
-#	   "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
-#	   "https://hostfiles.frogeye.fr/firstparty-trackers-hosts.txt"
-	  )
+	"https://phishing.army/download/phishing_army_blocklist.txt"
+#	"https://www.github.developerdan.com/hosts/lists/ads-and-tracking-extended.txt"
+#	"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+#	"https://hostfiles.frogeye.fr/firstparty-trackers-hosts.txt"
+	)
 
 # Temporary file where the hosts are stored
 TEMPFILE=/tmp/rawlist.tmp
@@ -35,6 +32,20 @@ TARGET=/etc/unbound/blocked-domains.conf
 
 # Clean temporary download file
 echo "" > $TEMPFILE
+
+# Add custom hosts
+# https://superuser.com/questions/363120/block-access-to-windows-update
+echo "windowsupdate.microsoft.com" >> $TEMPFILE
+echo "update.microsoft.com" >> $TEMPFILE
+echo "windowsupdate.com" >> $TEMPFILE
+echo "download.windowsupdate.com" >> $TEMPFILE
+echo "download.microsoft.com" >> $TEMPFILE
+echo "wustat.windows.com" >> $TEMPFILE
+echo "ntservicepack.microsoft.com" >> $TEMPFILE
+echo "stats.microsoft.com" >> $TEMPFILE
+# Also block bitdefender
+echo "bitdefender.com" >> $TEMPFILE
+echo "bitdefender.net" >> $TEMPFILE
 
 # Download sources and append them to the temp file
 for src in ${SOURCES[@]}
