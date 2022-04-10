@@ -1,0 +1,5 @@
+# Static table lookup for hostnames.
+# See hosts(5) for details.
+192.168.8.1 gw.pielluzza.ts
+192.168.8.4 iot.pielluzza.ts hermes.pielluzza.ts
+192.168.8.5 wifi.pielluzza.ts
