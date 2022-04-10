@@ -33,17 +33,9 @@ TARGET=/etc/unbound/blocked-domains.conf
 # Clean temporary download file
 echo "" > $TEMPFILE
 
-# Add custom hosts
-# https://superuser.com/questions/363120/block-access-to-windows-update
-echo "windowsupdate.microsoft.com" >> $TEMPFILE
-echo "update.microsoft.com" >> $TEMPFILE
-echo "windowsupdate.com" >> $TEMPFILE
-echo "download.windowsupdate.com" >> $TEMPFILE
-echo "download.microsoft.com" >> $TEMPFILE
-echo "wustat.windows.com" >> $TEMPFILE
-echo "ntservicepack.microsoft.com" >> $TEMPFILE
-echo "stats.microsoft.com" >> $TEMPFILE
-# Also block bitdefender
+# Add custom hosts here below
+#-----------------------------
+# Block bitdefender updates
 echo "bitdefender.com" >> $TEMPFILE
 echo "bitdefender.net" >> $TEMPFILE
 
