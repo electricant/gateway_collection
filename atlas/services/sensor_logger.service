@@ -1,0 +1,17 @@
+[Unit]
+Description=Log sensor readings from MQTT to data file(s)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=idle
+Restart=always
+RestartSec=5
+ExecStart=/srv/http/iot.pielluzza.ts/cgi/mqtt_listener.pl
+User=mosquitto
+Group=mosquitto
+WorkingDirectory=/srv/http/iot.pielluzza.ts/cgi
+
+[Install]
+WantedBy=multi-user.target
+

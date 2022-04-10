@@ -1,0 +1,12 @@
+# Static table lookup for hostnames.
+# See hosts(5) for details.
+127.0.0.1 localhost
+::1       ip6-localhost ip6-loopback
+
+# Static addresses on this network (from 192.168.8.1 to 192.168.8.10)
+192.168.8.1 gw.pielluzza.ts
+192.168.8.2 p2p.pielluzza.ts
+192.168.8.3 reserved0.pielluzza.ts
+192.168.8.4 iot.pielluzza.ts atlas.pielluzza.ts
+192.168.8.5 wifi.pielluzza.ts
+

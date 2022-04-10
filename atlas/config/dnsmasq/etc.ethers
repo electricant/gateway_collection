@@ -1,0 +1,22 @@
+# Global ethers files to be used by dnsmasq to assign IP addresses to known
+# clients.
+# /etc/ethers contains 48 bit Ethernet addresses and their corresponding IP
+# numbers, one line for each IP number:
+#
+#    Ethernet-address IP-number 
+# The two items are separated by any number of SPACE and/or TAB char acters.
+#
+# In this network, the following IP address ranges exist:
+# 	192.168.8.0/25 (1-126) internet-facing hosts (1 to 10 for network stuff)
+# 	192.168.8.128/25 (129-254) guest and stuff not allowed on the web
+# By default, DHCP assigns addresses in the 1nd subnet, the 2nd one being static
+
+# cece-soggiorno
+8c:aa:b5:77:f3:d7 192.168.8.129
+# cece-caldaia
+8c:ce:4e:de:b1:60 192.168.8.130
+# cece-clock
+cc:50:e3:c6:ca:1a 192.168.8.131
+# cece-fuori
+cc:50:e3:17:62:91 192.168.8.132
+

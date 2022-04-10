@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html><head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Pielluzza IoT Dashboard</title>
+
+	<script src="js/mqttws31.min.js"></script>
+	<script src="js/dygraph.min.js"></script>
+	<link rel="stylesheet" href="css/dygraph.min.css" />
+	<link rel="stylesheet" href="css/mvp.css" />
+	<!-- <link href="css/style.css" rel="stylesheet" type="text/css"> -->
+</head><body>
+	<header>
+		<h1 style="font-size:1.75em">Pielluzza IoT Dashboard</h1>
+		<img src="https://wttr.in/Trieste_1q.png" alt="Weather in Trieste" 
+									width="750">
+	</header>
+	
+	<main>
+		<!-- More sections will be added here -->
+		<section>
+			<header>
+				<h2 id="hStanza" style="font-size:1.25em;">
+					cece-stanza:</h2>
+				<a href="/data/cece-stanza.csv">get CSV archive</a>
+			</header>
+		</section>
+	</main>
+
+	<script type="text/javascript">
+		/**
+		 * Place a section for the sensor identified by "sensorName".
+	     * If such a section already exists do nothing
+	     */
+		function placeSensorSection(sensorName, curTemperature, curHumidity)
+		{
+			if (document.getElementById("h2-"+sensorName)) {
+				console.log("PlaceSensorSection: element exists " + sensorName);
+				return;
+			}
+
+			var cStr = "<section><header><h2 id=\"h2-" + sensorName + "\"";
+			cStr += " style=\"font-size:1.25em;\">";
+			// https://stackoverflow.com/questions/26653729/insert-no-break-space-by-element-innertext
+			cStr += sensorName + ": (T:\u00a0" + curTemperature + "C";
+			cStr += ",\u00a0H:\u00a0" + curHumidity + "%)</h2>";
+			cStr += "<p><a href=\"/data/" + sensorName + ".csv\">";
+			cStr += "Get complete raw data as CSV</a></p>";
+			cStr += "</header><div id=\"graphdiv-" + sensorName + "\" ";
+			cStr += "style=\"width:100%;height:200px;max-width:500px\">";
+			cStr += "</div></section>";
+			
+			var mainDOM = document.getElementsByTagName("main")[0];
+			mainDOM.insertAdjacentHTML("afterbegin", cStr);
+			console.log("placeSensorSection: h2-" + sensorName + " added.");
+		
+			const unixTime = Math.floor(Date.now() / 1000);
+			getTs = unixTime-(7*24*60*60); // last week
+			
+			// perform GET request for CSV data to be put inside the plots
+			var csvGet = new XMLHttpRequest();
+			csvGet.onreadystatechange = function()
+					{ csvReceived(csvGet, sensorName); };
+			csvGet.open("GET", "cgi/getcsv.sh?timestamp=" + getTs + "&name=" 
+						+ sensorName, true);
+			csvGet.send();
+		}
+
+		function csvReceived(xmlHTTP, sensor) {
+			if (xmlHTTP.readyState != 4)
+						return; // return if request not complete
+
+			if (xmlHTTP.status != 200) {
+				console.error("No valid data received for " + sensor);
+				console.error("Status code: " + xmlHTTP.status);
+				return;
+			}
+			// Trim the data & split it into an array of lines
+			var csvLines = xmlHTTP.responseText.trim().split("\n");
+			// The first line contains labels, separated by commas
+			var labels = csvLines[0].split(",");
+			// From line 1 to the end there's our data. Compile it in a format
+			// dygraphs.js can handle.
+			// See also: https://dygraphs.com/tests/multi-scale.html
+			var data = [];
+			for (i = 1; i < csvLines.length; i++)
+				data.push(csvLines[i].split(",").map(Number));
+			// Finally, to make plots nicer we need to scale pressure readings
+			// The standard pressure value is 1013hPa. For better readability,
+			// we want to map it to 21 deg while 950hPa is mapped to 0 deg
+			var presIndex = labels.indexOf("pres");
+			for (i = 0; i < data.length; i++) {
+				if (data[i][presIndex] == 0)
+					continue;
+				data[i][presIndex] = (data[i][presIndex] - 950) / 3;
+			}
+			placeDygraph("graphdiv-" + sensor, data, labels);
+		}
+
+		function onConnect() {
+  			console.log("MQTT connected");
+			// discover available sensors
+  			mqtt.subscribe("pielluzza/sensors/+");
+		}
+
+		function onMessageArrived(message) {
+ 			console.log("onMessageArrived: " + message.destinationName
+						+ " -> " + message.payloadString);
+			// we have to keep only the last part of the topic,
+			// which contains the node name
+			var nodeName = message.destinationName.match(/.*\/(.*)/)[1];
+			var jsonPayload = JSON.parse(message.payloadString);
+			placeSensorSection(nodeName, round(jsonPayload.temp, 1),
+						round(jsonPayload.rhum, 1));
+		}
+
+		function zeropad(x) {
+			return (x < 10) ? '0' + x : x;
+		}
+
+		function placeDygraph(where, data, labels) {
+			var seriesConf = { "temp" : { axis : "y1",
+						                  color : "red" },
+					           "rhum" : { axis : "y2",
+					           			  color : "blue",
+					           			  fillGraph: true },
+					           "qual" : { axis : "y2",
+					           			  color: "green" },
+					           "pres" : { axis : "y1",
+					           			  color: "goldenrod",
+					           		      fillGraph: true}
+			                 };
+			new Dygraph(document.getElementById(where), data,
+			{
+				labels : labels,
+				series : seriesConf,
+				axes: { x : {
+							axisLabelFormatter : function(d, gran, opts) {
+								date = new Date(d * 1000);
+								//console.log(date);
+								return date.getDate() + "-" 
+									+ (1 + date.getMonth())
+									+ " " + date.getHours() 
+									+ ":" + zeropad(date.getMinutes());
+							}
+                  		},
+				        y : { // https://dygraphs.com/tests/multi-scale.html
+							valueFormatter : function(y, opts, sname) {
+								if (sname == 'pres')
+									return round(y*3 + 950, 1);
+								else
+									return y;
+							}
+				        }
+                  	},
+				ylabel : 'Temperature',
+				y2label : 'Humidity',
+				showRangeSelector: true,
+				drawGapEdgePoints: true,
+			});
+		}
+
+		function round(number, decimals) {
+			return Number(Math.round(number + "e" + decimals) + 
+						"e-" + decimals)
+		}
+
+		var mqtt = new Paho.MQTT.Client("iot.pielluzza.ts", 9001, "wsClient");
+		mqtt.connect({onSuccess:onConnect});
+		mqtt.onMessageArrived = onMessageArrived;
+	</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="Hermes">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>Atlas</title>
+  
+	<link rel="icon" href="hermes.png" type="image/x-icon"/>
+
+	<!-- Load pure CSS -->
+	<link rel="stylesheet" href="css/pure-min.css">
+	<!-- Use Font Awesome for fancy icons -->
+	<link rel="stylesheet" href="fa-icons/css/all.min.css">
+	<!-- Local CSS for tweaks -->
+	<link rel="stylesheet" href="css/style.css">
+	
+	<!-- JavaScript stuff -->
+	<script language="javascript">
+		// Get the status of various services and check everything is ok
+		//if so update the webpage accordingly
+		function updateStatusDisplay(generalStatus) {
+			var tltText = "";
+
+			if (generalStatus.internet_status == 0) {
+				tltText += "Internet connectivity: Active";
+			} else {
+				tltText += "Internet connectivity: Inactive";
+			}
+			tltText += "<br>";
+			if (generalStatus.openvpn == 0) {
+				tltText += "OpenVPN client: Active";
+			} else {
+				tltText += "OpenVPN client: Inactive";
+			}
+			tltText += "<br>";
+			if (generalStatus.dns_server == 0) {
+				tltText += "DNS server: Active";
+			} else {
+				tltText += "DNS server: Inactive";
+			}
+			tltText += "<br>";
+			if (generalStatus.iptables == 0) {
+				tltText += "Iptables rules: Loaded";
+			} else {
+				tltText += "Iptables rules: Failed";
+			}
+		
+			document.getElementById("statusTooltip").innerHTML = tltText;
+			statusIco = document.getElementById("statusIcon");
+			parentBaseClass = "pure-button tooltip";
+
+			if (generalStatus.overall == 0) { 
+				// great! Everything is working!
+				statusIco.className = "fa fa-check";
+				statusIco.parentElement.className =
+					parentBaseClass + " button-success";
+			} else {
+				// (* fail trumpet *) something is wrong
+				statusIco.className = "fa fa-times";
+				statusIco.parentElement.className =
+					parentBaseClass + " button-error";
+			}
+		}
+	
+		function queryGeneralStatus() {
+			const HTTP = new XMLHttpRequest();
+			const URL = '/cgi/general_status.sh';
+			HTTP.open("GET", URL);
+			HTTP.send();
+
+			HTTP.onreadystatechange = function() {
+				console.log("GET " + URL + " " + HTTP.statusText);
+				
+				if(this.readyState == 4 && this.status == 200) {
+					generalStatus = JSON.parse(HTTP.responseText);
+					updateStatusDisplay(generalStatus);
+				}
+			}
+		}
+
+		/* Run me when loading */
+		queryGeneralStatus();
+	</script>
+</head>
+<body>
+	<div class="header">
+	<div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
+      	<a class="pure-menu-heading" style="text-decoration: underline"
+			href="/index.cgi">Atlas</a>
+		
+		<ul class="pure-menu-list">
+       <!--     	<li class="pure-menu-item">
+				<a href="/connection.html" class="pure-menu-link">
+					Connection
+				</a></li>
+	   -->
+            	<li class="pure-menu-item">
+				<a href="/misc.cgi" class="pure-menu-link">
+					Miscellaneous
+				</a>
+			</li>
+        	</ul>
+	</div>
+	</div>
