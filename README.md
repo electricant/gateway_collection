@@ -4,10 +4,10 @@ I built. Each configuration is contained within its folder. Folder names are the
 same as the hostname used for the machine.
 
 ## Kharon
-From the greek mythology is the ferryman of Hades carrying the souls from the
+From the Greek mythology is the ferryman of Hades carrying the souls from the
 world of the living to the world of the dead. It's the first gateway I built and
 it ran on a raspberry Pi. Used a 3G modem and a WiFi USB key to act as an
-access ponit. Some clever iptables magic allowed to track the amount of data
+access point. Some clever iptables magic allowed to track the amount of data
 traffic used during the month.
 
 ## Lilith
@@ -29,14 +29,22 @@ describes her as the firs wife of Adam. She was exiled from the Garden of Eden
 because she refused to submit and obey to Adam and coupled with the archangel
 Samael.
 
-There's some more detailed description which sadly is in italian. Open an issue
+There's some more detailed description which sadly is in Italian. Open an issue
 to let me know if you are interested in a translation or a pull request if you
-happen to transalate it yourself.
+happen to translate it yourself.
 
 ## Hermes
 Another raspberrypi-based gateway. This time the connection from a 4G modem is
-shared via the LAN port and then into a WiFi router. The name cames from the
-quickest of the greek gods. Hermes's role was to deliver messages as fast as
-possible. The poor old raspberry Pi was showing sign of its age so it was 
-overclocked to 900MHz. Moreover to keep interactivity high some simple QoS rules
-have been configured.
+shared via the LAN port and then into a WiFi router. The name comes from the
+quickest of the Greek gods. Hermes's role was to deliver messages as fast as
+possible. The poor old raspberry Pi was showing sign of its age so it was
+overclocked to 1000 MHz. Moreover to keep interactivity high some simple QoS
+rules have been configured.
+
+## Atlas
+The successor of Hermes. Very similar configuration, now based on a pine A64 for
+improved performance.
+
+In Greek mythology, Atlas is a Titan condemned to hold up the world for
+eternity. In the same vein, this SBC holds up my home network.
+
