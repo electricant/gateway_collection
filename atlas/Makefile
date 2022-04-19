@@ -37,6 +37,7 @@ get-all:
 	@scp $(HOST_SRC)/home/alarm/.bashrc           config/bashrc
 	@scp $(HOST_SRC)/home/alarm/.vimrc            config/vimrc
 	@scp $(HOST_SRC)/etc/mosquitto/mosquitto.conf config/
+	@scp $(HOST_SRC)/etc/systemd/swap.conf        config/
 
 init:
 	@mkdir -p http/192.168.8.4 http/iot.pielluzza.ts
