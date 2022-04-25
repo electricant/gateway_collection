@@ -33,8 +33,8 @@ echo '<h2>Traffic shaping</h2>'
 echo '<pre style="font-size: 14px; width:600px">'
 echo "* DOWNLOAD (eth0)":
 tc -s qdisc ls dev eth0 | awk '{print "\t",$0;}'
-echo "* UPLOAD (eth1)":
-tc -s qdisc ls dev eth1 | awk '{print "\t",$0;}'
+echo "* UPLOAD (lte0)":
+tc -s qdisc ls dev lte0 | awk '{print "\t",$0;}'
 echo '</pre>'
 
 echo '<h2>Bulk traffic</h2>'

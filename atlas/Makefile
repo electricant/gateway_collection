@@ -26,9 +26,14 @@ get-all:
 	# Getting unbound config files
 	@scp $(HOST_SRC)/etc/unbound/*.conf config/unbound/
 
+	# Getting systemd-networkd config files
+	@scp $(HOST_SRC)/etc/systemd/network/*        config/systemd-networkd/
+
+	# Getting udev rules
+	@scp $(HOST_SRC)/etc/udev/rules.d/*           config/udev-rules.d/
+
 	# Getting config files...
 	@scp $(HOST_SRC)/etc/thttpd.conf              config/
-	@scp $(HOST_SRC)/etc/systemd/network/*        config/systemd-networkd/
 	@scp $(HOST_SRC)/etc/ssh/sshd_config          config/
 	@scp $(HOST_SRC)/etc/iptables/iptables.rules  config/
 	#@scp $(HOST_SRC)/etc/vnstat.conf              config/
@@ -42,8 +47,8 @@ get-all:
 init:
 	@mkdir -p http/192.168.8.4 http/iot.pielluzza.ts
 	@mkdir aux_scripts
-	@mkdir services
-	@mkdir services/mosquitto.service.d
-	@mkdir -p config/dnsmasq config/unbound config/systemd-networkd \
-		config/sysctl
+	@mkdir -p services/mosquitto.service.d
+	@mkdir -p config/dnsmasq config/unbound
+	@mkdir config/systemd-networkd config/udev-rules.d
+	@mkdir config/sysctl 
 

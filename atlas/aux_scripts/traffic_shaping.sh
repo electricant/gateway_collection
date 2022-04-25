@@ -7,7 +7,7 @@ set -e
 
 # Interfaces definition
 IF_DL="eth0"
-IF_UL="eth1"
+IF_UL="lte0"
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
 SPEED_DOWN="30Mbit"
