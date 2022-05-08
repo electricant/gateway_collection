@@ -89,5 +89,4 @@ echo '</tr></table></div>'
 
 # Footer
 echo '</body></html>'
-
-
+exit 0

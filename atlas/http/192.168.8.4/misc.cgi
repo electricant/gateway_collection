@@ -18,11 +18,16 @@ cat header.html
 echo '<div class="content-wrapper">'
 
 echo '<h2>Hardware</h2>'
+
 echo '<h3>Uptime</h3>'
 echo '<p>'$(uptime)'</p>'
+
 echo '<h3>Memory</h3>'
 free -h | \
-	awk '/Mem/ { print "<p>Total: " $2 "B used: " $3 "B free: " $4 "B</p>" }'
+	awk '/Mem/{print "<p>RAM: " $2 "B used: " $3 "B free: " $4 "B</p>"}'
+df -h | \
+	awk '/mmcblk0p1/{print "<p>SD card: " $2 "B used: " $3 "B ("$5")</p>"}'
+
 echo '<h3>CPU</h3>'
 awk '{printf "<p>%3.1f°C", $1/1000}' \
 	/sys/class/thermal/thermal_zone0/temp
@@ -48,3 +53,4 @@ echo '</div>'
 # Footer
 echo '</body></html>'
 exit 0
+
