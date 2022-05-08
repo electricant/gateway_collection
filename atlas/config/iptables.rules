@@ -5,8 +5,8 @@
 :POSTROUTING ACCEPT [0:0]
 -A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT -m comment --comment "DNS-UDP"
 -A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT -m comment --comment "DNS-TCP"
-#-A PREROUTING -i eth0 -p udp --dport 123 -j REDIRECT -m comment --comment "NTP"
-#-A POSTROUTING -o eth0 -p udp --dport 123 -j MASQUERADE -m comment --comment "NTP MASQUERADE"
+-A PREROUTING -i eth0 -p udp --dport 123 -j REDIRECT -m comment --comment "NTP"
+-A POSTROUTING -o eth0 -p udp --dport 123 -j MASQUERADE -m comment --comment "NTP MASQUERADE"
 COMMIT
 
 *filter
@@ -25,11 +25,21 @@ COMMIT
 -A INPUT -j SIMPLE-FIREWALL
 
 -A FORWARD -p ipv6 -j ACCEPT
--A FORWARD -o lte0 -d 0.0.0.0/8 -j LOGDROP
--A FORWARD -o lte0 -d 10.0.0.0/8 -j LOGDROP
 -A FORWARD -o lte0 -d 127.0.0.0/8 -j LOGDROP
+-A FORWARD -i lte0 -s 127.0.0.0/8 -j LOGDROP
+# Drop illegal broadcast
+-A FORWARD -o lte0 -d 0.0.0.0/8 -j LOGDROP
+-A FORWARD -o lte0 -d 255.255.255.255 -j LOGDROP
+# Drop invalid private addresses
+-A FORWARD -o lte0 -d 10.0.0.0/8 -j LOGDROP
+-A FORWARD -o lte0 -d 172.16.0.0/12 -j LOGDROP
 -A FORWARD -o lte0 -d 192.168.8.1 -j ACCEPT
 -A FORWARD -o lte0 -d 192.168.0.0/16 -j LOGDROP
+-A FORWARD -i lte0 -s 192.168.8.1 -j ACCEPT
+-A FORWARD -i lte0 -s 192.168.0.0/16 -j LOGDROP
+# these are legal destinations only, never sources
+-A FORWARD -i lte0 -s 224.0.0.0/4 -j LOGDROP
+
 -A FORWARD -s 192.168.8.128/25 ! -d 192.168.8.0/24 -m comment --comment "block iot2internet" -j LOGDROP
 -A FORWARD ! -s 192.168.8.0/24 -d 192.168.8.128/25 -m comment --comment "block internet2iot" -j LOGDROP
 -A FORWARD -s 192.168.8.0/24 -j ACCEPT
@@ -42,12 +52,12 @@ COMMIT
 -A SIMPLE-FIREWALL -p icmp -m conntrack --ctstate NEW -j ACCEPT
 -A SIMPLE-FIREWALL -p tcp --tcp-flags ALL NONE -j LOGDROP
 -A SIMPLE-FIREWALL -p tcp --tcp-flags ALL ALL -j LOGDROP
--A SIMPLE-FIREWALL -m limit --limit 4/min -j LOG --log-prefix "iptables-dropped(polite): "
+-A SIMPLE-FIREWALL -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "iptables-dropped(polite): "
 -A SIMPLE-FIREWALL -p udp -j REJECT --reject-with icmp-port-unreachable
 -A SIMPLE-FIREWALL -p tcp -j REJECT --reject-with tcp-reset
 -A SIMPLE-FIREWALL -j REJECT --reject-with icmp-proto-unreachable
 
--A LOGDROP -m limit --limit 4/min -j LOG --log-prefix "iptables-dropped: "
+-A LOGDROP -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "iptables-dropped: "
 -A LOGDROP -j DROP
 
 -A TCP-FW -p tcp -m multiport --dports 6889:6900 -m comment --comment "Torrent" -j ACCEPT
