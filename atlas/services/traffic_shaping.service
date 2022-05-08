@@ -6,6 +6,7 @@ After=network-online.target iptables.service
 Type=simple
 ExecStart=/home/alarm/traffic_shaping.sh
 RemainAfterExit=yes
+ExecStop=/home/alarm/traffic_shaping.sh stop
 
 [Install]
 WantedBy=multi-user.target

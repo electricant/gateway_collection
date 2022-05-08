@@ -10,9 +10,28 @@ IF_DL="eth0"
 IF_UL="lte0"
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="30Mbit"
-SPEED_UP="25Mbit"
+SPEED_DOWN="25Mbit"
+SPEED_UP="13Mbit"
 RTT="50ms"
+
+# Function to cleanup and remove traffic shaping
+cleanup () {
+	# Reset interfaces (ignoring errors if there's no root qdisc)
+	tc qdisc del dev $IF_DL root || true
+	tc qdisc del dev $IF_UL root || true
+	
+	# Flush mangle table rules
+	# TODO: use a separate table for shaping? To avoid flushing the whole
+	#       postrouting chain
+	iptables -t mangle -F POSTROUTING
+	
+	# TSHAPE chain may not exist so ignore errors
+	iptables -t mangle -F TSHAPE || true
+	# NO_SHAPE chain may not exist so ignore errors
+	iptables -t mangle -F NO_SHAPE || true
+	# SET_EF chain may not exist so ignore errors
+	iptables -t mangle -F SET_EF || true
+}
 
 # Function to setup traffic shaping queues for the given device.
 # A prio queue with two bands is used as the root to differentiate maximum
@@ -26,9 +45,6 @@ RTT="50ms"
 #  $3 -> additional parameters for cake, such as 'ingress'
 #
 tc_setup () {
-	# Reset interface just to be safe (ignoring errors)
-	tc qdisc del dev $1 root || true
-
 	# Root qdisc just to separate packets into shaped ones (that go to cake)
 	# and those that bypass shaping completely (that go to codel)
 	tc qdisc add dev $1 root handle 1: prio bands 2 \
@@ -43,35 +59,37 @@ tc_setup () {
 	tc filter add dev $1 parent 1: protocol ip prio 1 handle 10 fw flowid 1:1
 }
 
+# First some cleanup
+cleanup
+
+# If this script has been invoked with 'stop' as parameter just do the cleanup
+if [ "$1" == "stop" ]; then
+	exit 0
+fi
+
 # Setup queuing disciplines
 tc_setup $IF_DL $SPEED_DOWN "ingress dual-dsthost"
 tc_setup $IF_UL $SPEED_UP dual-srchost
 
-# Setup iptables rules for traffic shaping TODO: move somewhere else
-iptables -t mangle -F POSTROUTING
+# Setup iptables rules for traffic shaping
 
-# Create tshape chain or flush it if it already exists
-if ! iptables -t mangle -N TSHAPE ; then
-	iptables -t mangle -F TSHAPE
-fi
-
-# Send to TSHAPE only packets that exit from $IF_UL and $IF_DL without DSCP
-# Packets for which the TOS is already set are dealt with by cake
+# Create tshape chain if it does not exist already and send to it only packets
+# that exit from $IF_UL and $IF_DL without DSCP markings.
+# Packets for which the TOS/DSCP field is already set are dealt with by cake
+iptables -t mangle -N TSHAPE || true
 iptables -t mangle -A POSTROUTING -o $IF_UL -m dscp --dscp 0 -j TSHAPE
 iptables -t mangle -A POSTROUTING -o $IF_DL -m dscp --dscp 0 -j TSHAPE
 
 # Chain for low-latency high priority services. Those are marked as 10.
 # Those packets bypass the shaping rules completely. Use this sparingly.
-if iptables -t mangle -N NO_SHAPE ; then
-	iptables -t mangle -A NO_SHAPE -j MARK --set-mark 10
-	iptables -t mangle -A NO_SHAPE -j ACCEPT # skip other rules
-fi
+iptables -t mangle -N NO_SHAPE || true
+iptables -t mangle -A NO_SHAPE -j MARK --set-mark 10
+iptables -t mangle -A NO_SHAPE -j ACCEPT # skip other rules
 
 # VOIP traffic that is not already marked falls into this chain
-if iptables -t mangle -N SET_EF ; then
-	iptables -t mangle -A SET_EF -j DSCP --set-dscp-class EF
-	iptables -t mangle -A SET_EF -j ACCEPT # skip other rules
-fi
+iptables -t mangle -N SET_EF || true
+iptables -t mangle -A SET_EF -j DSCP --set-dscp-class EF
+iptables -t mangle -A SET_EF -j ACCEPT # skip other rules
 
 # Local network transfers (and local multicast) must not be shaped
 iptables -t mangle -A TSHAPE -s 192.168.0.0/16 -d 192.168.0.0/16 -j NO_SHAPE
@@ -131,9 +149,10 @@ iptables -t mangle -A TSHAPE -p udp --dport 1194 -j ACCEPT
 iptables -t mangle -A TSHAPE -p udp --sport 1194 -j ACCEPT
 
 # Everything not matched by the rules above is sent to bulk. Log the packets
-# used to start the connection just to make sure we are not delaying traffic
-# that should not belong here.
-iptables -t mangle -A TSHAPE -m state --state NEW -m limit --limit 5/min \
+# just to make sure we are not delaying traffic that should not belong here.
+# Use connmark to match already logged connections.
+iptables -t mangle -A TSHAPE -m connmark ! --mark 9999 \
 	-j LOG --log-prefix "iptables-bulk: "
+iptables -t mangle -A TSHAPE -j CONNMARK --set-mark 9999
 iptables -t mangle -A TSHAPE -j DSCP --set-dscp-class CS1
 
