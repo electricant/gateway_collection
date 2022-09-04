@@ -10,9 +10,9 @@ IF_DL="eth0"
 IF_UL="lte0"
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="25Mbit"
-SPEED_UP="13Mbit"
-RTT="50ms"
+SPEED_DOWN="24Mbit"
+SPEED_UP="10Mbit"
+RTT="100ms"
 
 # Function to cleanup and remove traffic shaping
 cleanup () {
@@ -98,17 +98,17 @@ iptables -t mangle -A TSHAPE -s 192.168.0.0/16 -d 239.0.0.0/8 -j NO_SHAPE
 # Do not shape icmp
 iptables -t mangle -A TSHAPE -p icmp -j NO_SHAPE
 
-# TCP control packets that do not carry data are maximum prio
-iptables -t mangle -A TSHAPE -p tcp \
-	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
-	-j NO_SHAPE
-
 # DNS requests to/from this host are maximum priority
 iptables -t mangle -A TSHAPE -m owner --uid-owner unbound -j NO_SHAPE
 
 # Better not delay NTP
 iptables -t mangle -A TSHAPE -p udp --dport 123 -j NO_SHAPE
 iptables -t mangle -A TSHAPE -p udp --sport 123 -j NO_SHAPE
+
+# TCP control packets that do not carry data contribute to cake rate but are maximum prio
+iptables -t mangle -A TSHAPE -p tcp \
+	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
+	-j SET_EF
 
 # Mark VOIP as EF
 iptables -t mangle -A TSHAPE -p udp -m multiport \
@@ -147,6 +147,7 @@ iptables -t mangle -A TSHAPE -p tcp --sport 22 -j ACCEPT
 # VPN packets are also best effort
 iptables -t mangle -A TSHAPE -p udp --dport 1194 -j ACCEPT
 iptables -t mangle -A TSHAPE -p udp --sport 1194 -j ACCEPT
+iptables -t mangle -A TSHAPE -m owner --uid-owner openvpn -j ACCEPT
 
 # Everything not matched by the rules above is sent to bulk. Log the packets
 # just to make sure we are not delaying traffic that should not belong here.
