@@ -1,5 +1,7 @@
 # lte0 is the LTE USB key
 SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="0c:5b:8f:27:9a:64", NAME="lte0"
+# Or TOBY-L2
+SUBSYSTEM=="net", ACTION=="add", KERNEL=="usb0", NAME="lte0"
 
 # eth0 is the internal ethernet interface
 SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="02:ba:01:fe:52:b7", NAME="eth0"
