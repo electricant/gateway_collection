@@ -26,7 +26,7 @@ gb_day=3.33 # TODO: compute this value from GB/month and days between renewal
 start_day=23
 
 now_day=$(date +%d)
-now_mo=$(date +%m)
+now_mo=$(date +%m-)
 now_yr=$(date +%Y)
 now_ts=$(date --date="$now_yr-$now_mo-$now_day" +%s) 
 
@@ -52,7 +52,7 @@ echo '<p>Target today: '
 echo "scale=2; ($days_diff+1)*$gb_day" | bc -q
 echo ' GB</p>'
 echo '<p><a href="http://192.168.8.1/html/statistic.html">[Statistics]</a></p>'
-		
+
 echo '<h2>DHCP Leases</h2>'
 echo '<table style="width:600px; text-align:center; font-size:16px">'
 echo '<tr>'

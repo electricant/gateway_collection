@@ -20,7 +20,7 @@ systemctl is-active --quiet iptables
 iptables_status=$?
 
 # The same as above, just for checking internet connectivity
-ping -q -c 1 -W 0.15 scaramuzza.me >/dev/null 2>&1
+ping -q -c 1 -W 0.15 google.com >/dev/null 2>&1
 internet_status=$?
 
 # If the 'tun0' interface exists then, also openVPN is running
