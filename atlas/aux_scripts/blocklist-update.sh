@@ -9,10 +9,9 @@ set -e # Exit when any command fails
 # See also:
 #	https://firebog.net/
 #	https://www.github.developerdan.com/hosts/
-SOURCES=("https://someonewhocares.org/hosts/hosts"
+SOURCES=("https://someonewhocares.org/hosts/zero/hosts"
 	"https://pgl.yoyo.org/as/serverlist.php?hostformat=hosts;showintro=0"
 	"https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Risk/hosts"
-	"https://raw.githubusercontent.com/FadeMind/hosts.extras/master/CoinBlockerList/hosts"
 	"https://raw.githubusercontent.com/llacb47/mischosts/master/social/tiktok-block"
 	"https://raw.githubusercontent.com/llacb47/mischosts/master/microsoft-telemetry"
 	"https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt"
@@ -36,8 +35,8 @@ echo "" > $TEMPFILE
 # Add custom hosts here below
 #-----------------------------
 # Block bitdefender updates
-echo "bitdefender.com" >> $TEMPFILE
-echo "bitdefender.net" >> $TEMPFILE
+#echo "bitdefender.com" >> $TEMPFILE
+#echo "bitdefender.net" >> $TEMPFILE
 
 # Download sources and append them to the temp file
 for src in ${SOURCES[@]}
