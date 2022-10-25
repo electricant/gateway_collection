@@ -26,7 +26,7 @@ gb_day=3.33 # TODO: compute this value from GB/month and days between renewal
 start_day=23
 
 now_day=$(date +%d)
-now_mo=$(date +%m-)
+now_mo=$(date +%-m)
 now_yr=$(date +%Y)
 now_ts=$(date --date="$now_yr-$now_mo-$now_day" +%s) 
 
