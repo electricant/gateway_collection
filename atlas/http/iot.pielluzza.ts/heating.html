@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html><head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Pielluzza IoT Dashboard</title>
+
+	<script src="js/mqttws31.min.js"></script>
+	<link rel="stylesheet" href="css/mvp.css"/>
+	<!-- <link href="css/style.css" rel="stylesheet" type="text/css"> -->
+</head><body>
+	<header>
+		<nav>
+			<a href="/" style="font-size: 18px">
+				<img alt="logo" src="favicon.ico" height="18"
+					style="margin:0">
+				Pielluzza IoT Dashboard
+			</a>
+			<ul>
+				<li><a href="/index.html">&#x1F4CA; Dashboard</a></li>
+				<li><a href="/heating.html">&#x1F525; Heating</a></li>
+			</ul>
+		</nav>
+	</header>
+	<main>
+		<h2>How it works</h2>
+		<p>
+			Let's say that the thermostat node name is 'cece-test' and
+			base_topic=heating/ then, this module will listen to the
+			folowing topics:
+			<ul>
+				<li>
+					heating/cece-test/set_mode - To turn the
+					thermostat into auto mode 'A', always on '1' or
+					always off '0'
+				</li>
+				<li>
+					heating/cece-test/target_temperature - To set the
+					target temperature for the room
+				</li>
+			</ul>
+		</p>
+
+		<p>
+			The thermostat node will also publish to:
+			<ul>
+				<li>
+					heating/cece-test/status - Summary of thermostat 
+					status in json format (updated when data is 
+					received to the topics above)
+				</li>
+				<li>
+					heating/cece-test/decision - 1 if the heater must
+					be turned on, 0 if turned off
+				</li>
+			</ul>
+		</p>
+		<p>
+			<b>NOTE:</b> heating nodes are dicovered from MQTT. Please
+			wait for them to appear.
+		</p>
+
+		<div id="sec-heaters">
+			<h2>Heating nodes</h2>
+			<!-- Heaters will appear here -->
+		</div>
+	</main>
+
+	<script type="text/javascript">
+		/**
+		 * Place a section for the sensor identified by "sensorName".
+	     	 * If such a section already exists do nothing
+	     	 */
+		function placeHeater(heaterName, statusJson)
+		{
+			if (document.getElementById(heaterName)) {
+				console.log("PlaceHeater: element exists " +
+					heaterName);
+				return;
+			}
+
+			var cStr = "<details id=\"" + heaterName + "\">";
+			cStr +="<summary>" + heaterName + "</summary>";
+			cStr += "<p>Status: " + statusJson +"</p>";
+			cStr += '<p>set_mode <input id="inMode" type="text" placeholder="0, 1, A">';
+			cStr += '<button type="button" style="padding:0 0.5rem; margin-left:0.5rem"' +
+			        	'onclick="sendMode(\'' + heaterName + '\')">Send MQTT</button></p>';
+			cStr += '<p>target_temperature <input id="inTemp" type="text" placeholder="ex. 17.0">';
+			cStr += '<button type="button" style="padding:0 0.5rem; margin-left:0.5rem"' +
+			        	'onclick="sendTemp(\'' + heaterName + '\')">Send MQTT</button></p>';
+			cStr += "</details>";
+
+			var heatersSec = document.getElementById("sec-heaters");
+			heatersSec.innerHTML += cStr;
+			console.log("placeHeater: " + heaterName + " added.");
+		}
+		
+		function sendMode(hName) {
+			var inMode = document.getElementById("inMode");
+			message = new Paho.MQTT.Message(inMode.value);
+  			message.destinationName = "pielluzza/heating/" + hName + "/set_mode";
+  			mqtt.send(message);
+			console.log("sendMode: " + message.destinationName + " = " + inMode.value);
+			//window.location.reload();
+		}
+
+		function sendTemp(hName) {
+			var inTemp = document.getElementById("inTemp");
+			message = new Paho.MQTT.Message(inTemp.value);
+  			message.destinationName = "pielluzza/heating/" + hName + "/target_temperature";
+  			mqtt.send(message);
+			console.log("sendTemp: " + message.destinationName + " = " + inTemp.value);
+			//window.location.reload();
+		}
+
+		function onMessageArrived(message) {
+ 			console.log("onMessageArrived: " + message.destinationName
+						+ " -> " + message.payloadString);
+			// we have to keep only the last part of the topic,
+			// which contains the node name
+			var nodeName = message.destinationName.match(/.*\/(.*)\/.*/)[1];
+			var jsonPayload = JSON.parse(message.payloadString);
+
+			placeHeater(nodeName, message.payloadString);
+		}
+
+		function topicSubscribe() {
+  			console.log("MQTT connected");
+  			mqtt.subscribe("pielluzza/heating/+/status");
+		}
+
+		/* MAIN: */
+		var mqtt = new Paho.MQTT.Client("iot.pielluzza.ts",9001,"IoTDash");
+		mqtt.connect({onSuccess:topicSubscribe});
+		mqtt.onMessageArrived = onMessageArrived;
+	</script>
+</body>
+</html>
