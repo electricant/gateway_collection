@@ -16,6 +16,12 @@ get-all:
 	@scp $(HOST_SRC)/etc/systemd/system/traffic_shaping.service   services/
 	@scp $(HOST_SRC)/etc/systemd/system/mosquitto.service.d/* \
 		services/mosquitto.service.d
+	@scp $(HOST_SRC)/etc/systemd/system/unbound.service.d/* \
+		services/unbound.service.d
+	@scp $(HOST_SRC)/etc/systemd/system/thttpd.service.d/* \
+		services/thttpd.service.d
+	@scp $(HOST_SRC)/etc/systemd/system/ntpd.service.d/* \
+		services/ntpd.service.d
 	@scp $(HOST_SRC)/etc/systemd/system/sensor_logger.service     services/
 	
 	# Getting dnsmasq config files
@@ -46,9 +52,12 @@ get-all:
 
 init:
 	@mkdir -p http/192.168.8.4 http/iot.pielluzza.ts
-	@mkdir aux_scripts
+	@mkdir -p aux_scripts
 	@mkdir -p services/mosquitto.service.d
+	@mkdir -p services/unbound.service.d
+	@mkdir -p services/thttpd.service.d
+	@mkdir -p services/ntpd.service.d
 	@mkdir -p config/dnsmasq config/unbound
-	@mkdir config/systemd-networkd config/udev-rules.d
-	@mkdir config/sysctl 
+	@mkdir -p config/systemd-networkd config/udev-rules.d
+	@mkdir -p config/sysctl 
 
