@@ -18,8 +18,6 @@ get-all:
 		services/mosquitto.service.d
 	@scp $(HOST_SRC)/etc/systemd/system/unbound.service.d/* \
 		services/unbound.service.d
-	@scp $(HOST_SRC)/etc/systemd/system/thttpd.service.d/* \
-		services/thttpd.service.d
 	@scp $(HOST_SRC)/etc/systemd/system/ntpd.service.d/* \
 		services/ntpd.service.d
 	@scp $(HOST_SRC)/etc/systemd/system/sensor_logger.service     services/
@@ -39,7 +37,7 @@ get-all:
 	@scp $(HOST_SRC)/etc/udev/rules.d/*           config/udev-rules.d/
 
 	# Getting config files...
-	@scp $(HOST_SRC)/etc/thttpd.conf              config/
+	@scp $(HOST_SRC)/etc/lighttpd/lighttpd.conf   config/
 	@scp $(HOST_SRC)/etc/ssh/sshd_config          config/
 	@scp $(HOST_SRC)/etc/iptables/iptables.rules  config/
 	#@scp $(HOST_SRC)/etc/vnstat.conf              config/
@@ -55,7 +53,6 @@ init:
 	@mkdir -p aux_scripts
 	@mkdir -p services/mosquitto.service.d
 	@mkdir -p services/unbound.service.d
-	@mkdir -p services/thttpd.service.d
 	@mkdir -p services/ntpd.service.d
 	@mkdir -p config/dnsmasq config/unbound
 	@mkdir -p config/systemd-networkd config/udev-rules.d

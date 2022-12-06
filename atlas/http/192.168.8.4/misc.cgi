@@ -41,13 +41,6 @@ tc -s qdisc ls dev eth0 | awk '{print "\t",$0;}'
 echo "* UPLOAD (lte0)":
 tc -s qdisc ls dev lte0 | awk '{print "\t",$0;}'
 echo '</pre>'
-
-echo '<h2>Bulk traffic</h2>'
-echo '<iframe class="termsize" src="/cgi/get_logs.sh?bulk"></iframe>'
-
-echo '<h2>Dropped packets</h2>'
-echo '<iframe class="termsize" src="/cgi/get_logs.sh?dropped"></iframe>'
-
 echo '</div>'
 
 # Footer

@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/usr/bin/sudo /bin/dash
 #
 PATH="/bin:/usr/bin:/usr/ucb:/usr/opt/bin"
 
