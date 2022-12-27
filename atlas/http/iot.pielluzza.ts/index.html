@@ -19,7 +19,7 @@
 			</a>
 			<ul>
 				<li><a href="/index.html">&#x1F4CA; Dashboard</a></li>
-				<li><a href="/heating.html">&#x1F525; Heating</a></li>
+				<li><a href="/heating.cgi">&#x1F525; Heating</a></li>
 			</ul>
 		</nav>
 	</header>
@@ -57,7 +57,7 @@
 			// https://stackoverflow.com/questions/26653729/insert-no-break-space-by-element-innertext
 			cStr += sensorName + ": (T:\u00a0" + curTemperature + "C";
 			cStr += ",\u00a0H:\u00a0" + curHumidity + "%)</h2>";
-			cStr += "<p><a href=\"/data/" + sensorName + ".csv\">";
+			cStr += "<p><a href=\"/cgi/getcsv.sh?name=" + sensorName + "&timestamp=0\">";
 			cStr += "Get complete raw data as CSV</a></p>";
 			cStr += "</header><div id=\"graphdiv-" + sensorName + "\" ";
 			cStr += "style=\"width:100%;height:200px;max-width:500px\">";
