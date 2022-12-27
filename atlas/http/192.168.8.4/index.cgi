@@ -22,7 +22,7 @@ echo '<i id="statusIcon" class="fa fa-spinner"></i>'
 echo '<span id="statusTooltip" class="tooltiptext">Loading...</span></button>'
 
 echo '<h2>Internet Connection</h2>'
-gb_day=3.33 # TODO: compute this value from GB/month and days between renewal
+gb_day=4 # TODO: compute this value from GB/month and days between renewal
 start_day=23
 
 now_day=$(date +%d)

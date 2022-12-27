@@ -10,7 +10,7 @@ IF_DL="eth0"
 IF_UL="lte0"
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="25Mbit"
+SPEED_DOWN="36Mbit"
 SPEED_UP="16Mbit"
 RTT="80ms"
 
