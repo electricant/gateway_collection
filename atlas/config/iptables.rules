@@ -43,6 +43,11 @@ COMMIT
 -A FORWARD -s 192.168.8.128/25 ! -d 192.168.8.0/24 -m comment --comment "block iot2internet" -j LOGDROP
 -A FORWARD ! -s 192.168.8.0/24 -d 192.168.8.128/25 -m comment --comment "block internet2iot" -j LOGDROP
 -A FORWARD -s 192.168.8.0/24 -j ACCEPT
+
+# Iliad accepts no more than 200 parallel TCP connections. Use 5% margin
+-A FORWARD -p tcp -m connlimit --connlimit-daddr --connlimit-above 190 -j REJECT --reject-with tcp-reset
+
+# Additional firewall rules
 -A FORWARD -i lte0 -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
 -A FORWARD -i lte0 -p udp -m conntrack --ctstate NEW -j UDP-FW
 -A FORWARD -j SIMPLE-FIREWALL
