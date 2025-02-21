@@ -10,9 +10,9 @@ IF_DL="eth0"
 IF_UL="lte0"
 
 # Speed and RTT definitions for CAKE (see man tc-cake for more information)
-SPEED_DOWN="36Mbit"
+SPEED_DOWN="40Mbit"
 SPEED_UP="16Mbit"
-RTT="80ms"
+RTT="75ms"
 
 # Function to cleanup and remove traffic shaping
 cleanup () {
@@ -100,10 +100,16 @@ iptables -t mangle -A TSHAPE -p icmp -j NO_SHAPE
 
 # DNS requests to/from this host are maximum priority
 iptables -t mangle -A TSHAPE -m owner --uid-owner unbound -j NO_SHAPE
+iptables -t mangle -A TSHAPE -m owner --uid-owner dnsmasq -j NO_SHAPE
 
 # Better not delay NTP
 iptables -t mangle -A TSHAPE -p udp --dport 123 -j NO_SHAPE
 iptables -t mangle -A TSHAPE -p udp --sport 123 -j NO_SHAPE
+
+# OpenVPN packets do not like to be shaped
+iptables -t mangle -A TSHAPE -p udp --dport 1194 -j NO_SHAPE
+iptables -t mangle -A TSHAPE -p udp --sport 1194 -j NO_SHAPE
+iptables -t mangle -A TSHAPE -m owner --uid-owner openvpn -j NO_SHAPE
 
 # TCP control packets that do not carry data contribute to cake rate but are maximum prio
 iptables -t mangle -A TSHAPE -p tcp \
@@ -123,6 +129,16 @@ iptables -t mangle -A TSHAPE -p udp -m multiport --sports 8800:8810 \
 	-j SET_EF -m comment --comment "Zoom P2P video"
 iptables -t mangle -A TSHAPE -p udp -m multiport --dports 8800:8810 \
 	-j SET_EF -m comment --comment "Zoom P2P video"
+
+# Also remote desktop is marked as EF as it is latency-sensitive
+iptables -t mangle -A TSHAPE -p tcp --sport 3389 \
+	-j SET_EF -m comment --comment "Windows remote desktop"
+iptables -t mangle -A TSHAPE -p tcp --dport 3389 \
+	-j SET_EF -m comment --comment "Windows remote desktop"
+iptables -t mangle -A TSHAPE -p udp --sport 3389 \
+	-j SET_EF -m comment --comment "Windows remote desktop"
+iptables -t mangle -A TSHAPE -p udp --dport 3389 \
+	-j SET_EF -m comment --comment "Windows remote desktop"
 
 # Short HTTP(S) connections are best-effort. Accept them straight away
 iptables -t mangle -A TSHAPE -p tcp -m multiport --dports 80,443 \
@@ -144,14 +160,11 @@ iptables -t mangle -A TSHAPE -p udp -m multiport --sports 80,443 \
 iptables -t mangle -A TSHAPE -p tcp --dport 22 -j ACCEPT
 iptables -t mangle -A TSHAPE -p tcp --sport 22 -j ACCEPT
 
-# VPN packets are also best effort
-iptables -t mangle -A TSHAPE -p udp --dport 1194 -j ACCEPT
-iptables -t mangle -A TSHAPE -p udp --sport 1194 -j ACCEPT
-iptables -t mangle -A TSHAPE -m owner --uid-owner openvpn -j ACCEPT
-
 # Everything not matched by the rules above is sent to bulk. Log the packets
 # just to make sure we are not delaying traffic that should not belong here.
 # Use connmark to match already logged connections.
+iptables -t mangle -A TSHAPE -p TCP --dport 5222 -j CONNMARK --set-mark 9999 \
+	-m comment --comment "WhatsApp/IM"
 iptables -t mangle -A TSHAPE -m connmark ! --mark 9999 \
 	-j LOG --log-prefix "iptables-bulk: "
 iptables -t mangle -A TSHAPE -j CONNMARK --set-mark 9999

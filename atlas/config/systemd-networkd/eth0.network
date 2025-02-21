@@ -7,3 +7,4 @@ Address=fdc0:600d:cafe::1/64
 #Gateway=192.168.8.1
 DNS=127.0.0.1
 DNS=8.8.8.8
+IPv6AcceptRA=no

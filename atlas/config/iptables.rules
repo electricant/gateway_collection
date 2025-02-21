@@ -3,8 +3,10 @@
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
--A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT -m comment --comment "DNS-UDP"
--A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT -m comment --comment "DNS-TCP"
+#-A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT -m comment --comment "DNS-UDP"
+-A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT --to-port 5353 -m comment --comment "DNS-UDP"
+#-A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT -m comment --comment "DNS-TCP"
+-A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 5353 -m comment --comment "DNS-TCP"
 -A PREROUTING -i eth0 -p udp --dport 123 -j REDIRECT -m comment --comment "NTP"
 -A POSTROUTING -o eth0 -p udp --dport 123 -j MASQUERADE -m comment --comment "NTP MASQUERADE"
 COMMIT
@@ -13,7 +15,7 @@ COMMIT
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT ACCEPT [0:0]
-:SIMPLE-FIREWALL - [0:0]
+:FIREWALL - [0:0]
 :LOGDROP - [0:0]
 :TCP-FW - [0:0]
 :UDP-FW - [0:0]
@@ -21,10 +23,12 @@ COMMIT
 -A INPUT -i lo -j ACCEPT
 -A INPUT -i eth0 -j ACCEPT
 -A INPUT -i tun0 -j ACCEPT
--A INPUT -i lte0 -p udp --sport 1194 -j ACCEPT
--A INPUT -j SIMPLE-FIREWALL
+-A INPUT -i lte0 -p udp --sport 1194 -m comment --comment "OpenVPN" -j ACCEPT
+-A INPUT -i lte0 -p udp --sport 1900 -m comment --comment "UPnP" -j ACCEPT
+-A INPUT -j FIREWALL
 
 -A FORWARD -p ipv6 -j ACCEPT
+-A FORWARD -o lte0 -d 192.168.8.1 -j ACCEPT
 -A FORWARD -o lte0 -d 127.0.0.0/8 -j LOGDROP
 -A FORWARD -i lte0 -s 127.0.0.0/8 -j LOGDROP
 # Drop illegal broadcast
@@ -33,38 +37,42 @@ COMMIT
 # Drop invalid private addresses
 -A FORWARD -o lte0 -d 10.0.0.0/8 -j LOGDROP
 -A FORWARD -o lte0 -d 172.16.0.0/12 -j LOGDROP
--A FORWARD -o lte0 -d 192.168.8.1 -j ACCEPT
 -A FORWARD -o lte0 -d 192.168.0.0/16 -j LOGDROP
 -A FORWARD -i lte0 -s 192.168.8.1 -j ACCEPT
 -A FORWARD -i lte0 -s 192.168.0.0/16 -j LOGDROP
 # these are legal destinations only, never sources
 -A FORWARD -i lte0 -s 224.0.0.0/4 -j LOGDROP
 
+# Block IoT device access to the internet
 -A FORWARD -s 192.168.8.128/25 ! -d 192.168.8.0/24 -m comment --comment "block iot2internet" -j LOGDROP
 -A FORWARD ! -s 192.168.8.0/24 -d 192.168.8.128/25 -m comment --comment "block internet2iot" -j LOGDROP
--A FORWARD -s 192.168.8.0/24 -j ACCEPT
 
-# Iliad accepts no more than 200 parallel TCP connections. Use 5% margin
--A FORWARD -p tcp -m connlimit --connlimit-daddr --connlimit-above 190 -j REJECT --reject-with tcp-reset
+# Iliad accepts no more than 200 parallel TCP connections. Use 10% margin
+#-A FORWARD -p tcp --syn -m connlimit --connlimit-mask 0 --connlimit-above 190 -j LOG --log-prefix "overlimit-rejected: "
+#-A FORWARD -p tcp --syn -m connlimit --connlimit-mask 0 --connlimit-above 190 -j REJECT --reject-with tcp-reset
+-A FORWARD -s 192.168.8.0/24 -j ACCEPT
 
 # Additional firewall rules
 -A FORWARD -i lte0 -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
 -A FORWARD -i lte0 -p udp -m conntrack --ctstate NEW -j UDP-FW
--A FORWARD -j SIMPLE-FIREWALL
+-A FORWARD -j FIREWALL
 
--A SIMPLE-FIREWALL -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A SIMPLE-FIREWALL -m conntrack --ctstate INVALID -j LOGDROP
--A SIMPLE-FIREWALL -p icmp -m conntrack --ctstate NEW -j ACCEPT
--A SIMPLE-FIREWALL -p tcp --tcp-flags ALL NONE -j LOGDROP
--A SIMPLE-FIREWALL -p tcp --tcp-flags ALL ALL -j LOGDROP
--A SIMPLE-FIREWALL -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "iptables-dropped(polite): "
--A SIMPLE-FIREWALL -p udp -j REJECT --reject-with icmp-port-unreachable
--A SIMPLE-FIREWALL -p tcp -j REJECT --reject-with tcp-reset
--A SIMPLE-FIREWALL -j REJECT --reject-with icmp-proto-unreachable
+-A FIREWALL -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FIREWALL -m conntrack --ctstate INVALID -j LOGDROP
+-A FIREWALL -p icmp -m conntrack --ctstate NEW -j ACCEPT
+-A FIREWALL -p tcp --tcp-flags ALL NONE -j LOGDROP
+-A FIREWALL -p tcp --tcp-flags ALL ALL -j LOGDROP
 
--A LOGDROP -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "iptables-dropped: "
+-A FIREWALL -m limit --limit 1/sec -j LOG --log-prefix "firewall-rejected: "
+-A FIREWALL -p udp -j REJECT --reject-with icmp-port-unreachable
+-A FIREWALL -p tcp -j REJECT --reject-with tcp-reset
+-A FIREWALL -j REJECT --reject-with icmp-proto-unreachable
+
+# Log packets then drop them
+-A LOGDROP -m limit --limit 1/sec -j LOG --log-prefix "iptables-dropped: "
 -A LOGDROP -j DROP
 
+# Port forwarding rules
 -A TCP-FW -p tcp -m multiport --dports 6889:6900 -m comment --comment "Torrent" -j ACCEPT
 -A UDP-FW -p udp -m multiport --dports 6889:6900 -m comment --comment "Torrent" -j ACCEPT
 COMMIT
