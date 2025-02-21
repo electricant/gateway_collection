@@ -21,6 +21,15 @@ echo '<button class="pure-button tooltip">'
 echo '<i id="statusIcon" class="fa fa-spinner"></i>'
 echo '<span id="statusTooltip" class="tooltiptext">Loading...</span></button>'
 
+echo '<h3>Uptime</h3>'
+echo '<p>'$(uptime)'</p>'
+
+echo '<h3>Memory</h3>'
+free -h | \
+      awk '/Mem/{print "<p>RAM: " $2 "B used: " $3 "B free: " $4 "B</p>"}'
+df -h | \
+      awk '/mmcblk0p1/{print "<p>SD card: " $2 "B used: " $3 "B ("$5")</p>"}'
+
 echo '<h2>Internet Connection</h2>'
 gb_day=4 # TODO: compute this value from GB/month and days between renewal
 start_day=23
@@ -52,18 +61,6 @@ echo '<p>Target today: '
 echo "scale=2; ($days_diff+1)*$gb_day" | bc -q
 echo ' GB</p>'
 echo '<p><a href="http://192.168.8.1/html/statistic.html">[Statistics]</a></p>'
-
-echo '<h2>DHCP Leases</h2>'
-echo '<table style="width:600px; text-align:center; font-size:16px">'
-echo '<tr>'
-echo '<th>Expiry</th><th>MAC Address</th><th>IP Address</th><th>Host Name</th>'
-echo '</tr>'
-cat /tmp/dnsmasq.leases | \
-	awk 'NF>2 {print "<tr><td>" strftime("%d %b %Y<br/>%T",$1) "</td><td>" $2 \
-		"</td><td>" $3 "</td><td>" $4 "</td></tr>"}'
-echo '</table>'
-echo '<p>Edit <a href="https://linux.die.net/man/5/ethers">/etc/ethers</a> to
-	add hosts in the firewalled (no internet) subnet.</p>'
 
 echo '<h2>Network Topology</h2>'
 echo '<table style="width:600px;text-align:center;font-family:monospace;">'

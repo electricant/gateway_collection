@@ -13,7 +13,8 @@ echo "Content-type: application/json; charset=utf-8\n"
 
 # Check for services and save their status in a variable.
 # When $? is 0 then the service is active. Otherwhise it is not active.
-ps -C unbound >/dev/null
+#ps -C unbound >/dev/null
+systemctl is-active --quiet dnsmasq 
 dns_status=$?
 
 systemctl is-active --quiet iptables 

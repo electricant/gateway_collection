@@ -96,3 +96,10 @@ iframe.termsize {
 .content-wrapper {
 	margin-top: 3em;
 }
+
+/* better tables */
+td, th {
+	width: 10em;
+	text-align: center;
+}
+
