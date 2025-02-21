@@ -10,6 +10,9 @@ use JSON;
 use utf8;
 use Data::Dumper;
 use Path::Tiny;
+use POSIX qw(strftime);
+use lib '.';
+use RecSQL;
 
 # Load configuration file
 BEGIN { require "./cgi/config.pl"; }
@@ -21,10 +24,12 @@ sub print_header
 	say '<html><head>';
 	say '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>';
 	say '<meta name="viewport" content="width=device-width, initial-scale=1">';
-	say '<title>Pielluzza IoT Dashboard | Heating</title>';
+	say '<title>Pielluzza IoT Dashboard</title>';
 
 	say '<script src="js/mqttws31.min.js"></script>';
 	say '<script src="js/heating.js"></script>';
+	say '<script src="https://cdn.anychart.com/releases/8.10.0/js/anychart-bundle.min.js"></script>';
+
 	say '<link rel="stylesheet" href="css/mvp.css"/>';
 	#<!-- <link href="css/style.css" rel="stylesheet" type="text/css"> -->
 	say '</head>';
@@ -40,38 +45,43 @@ sub print_header
 	say '</nav></header>';
 }
 
-sub put_thermostat
+sub put_chart
 {
-	my ( $heater, $relay ) = @_;
-	say "<details id=\"det-$heater\">";
-	say "<summary>$heater</summary>";
-	say "<p>Status: <ph id=\"stat-$heater\">unknown</ph></p>";
-	say "<p>Relay: $relay (status: <ph id=\"rly-$relay\">?</ph>)</p>";
-	say '<p>Temperature <input id="inTemp" type="text" ' .
-		'style="display:inline; width:5em" placeholder="ex. 17.0">';
-	say '<button type="button" style="padding:0 0.5rem; margin-left:0.5rem"' .
-		" onclick=\"sendTemp('$heater')\">Apply</button></p>";
-	say '<p>Mode: <button type="button" ' .
-		'style="padding:0 0.5rem; margin-left:0.5rem;"' .
-		" onclick=\"sendMode('A', '$heater')\">AUTO</button>";
-	say '<button type="button" ' .
-		'style="padding:0 0.5rem; margin-left:0.5rem;"' .
-		" onclick=\"sendMode('0', '$heater')\">OFF</button></p>";
-	say '</details>';
+	my $filename = '/srv/http/iot.pielluzza.ts/data/cece-soggiorno.rec';
+	my $ts = time() - (7 * 24 * 60 * 60);
+
+	my $recdb = RecSQL->from_file($filename);
+	my $records = $recdb->select("*", sub { $_[0]->get('timestamp') >= $ts });
+
+	say '<script>';
+	say 'var temperature = [';
+
+	foreach my $record (@$records) {
+		print '["' . $record->{timestamp} . '", ' . $record->{temp} . ', ' . $record->{rhum} . "],\n";
+	}
+	say '];';
+
+	say 'anychart.onDocumentReady(function() {' .
+        		'var chart = anychart.line();' .
+			'chart.xGrid().enabled(true);' .
+			'chart.yGrid().enabled(true);' .
+			'chart.xAxis().labels().rotation(90);' .
+        		'chart.line(temperature).name("Temperature").stroke("red");' .
+        		'chart.container("container");' .
+        		'chart.draw();' .
+	    '});';
+	say '</script>';
 }
 
+###
+# Page generation begins here
+###
 print "Content-type:text/html\r\n\r\n";
 
 print_header();
 
 say '<main>';
-say '<div>' .
-	'<img style="max-width: max-content; width:100%" ' .
-		'src="dog_heat.gif"/>'.
-    '</div>';
-
-say '<div id="sec-heaters">';
-say '<h2>Heating nodes</h2>';
+say '<div id="container"></div>';
 
 # Enumerate thermostats and put them in the webpage
 my $forward_json = path($FORWARD_FILE)->slurp;
@@ -84,12 +94,11 @@ foreach (@fw) {
 	# So we split on '/' and extract the 3rd (index = 2) element
 	my $heater = (split '/', $_->{'decision-topic'})[2];
 	my $relay = (split '/', $_->{'relay-topic'})[2];
-
-	put_thermostat($heater, $relay);
 }
 
-say '</div>';
 say '</main>';
+
+put_chart();
 
 say '</body>';
 say '</html>';
