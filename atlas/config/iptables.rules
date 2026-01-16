@@ -3,10 +3,10 @@
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
-#-A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT -m comment --comment "DNS-UDP"
--A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT --to-port 5353 -m comment --comment "DNS-UDP"
-#-A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT -m comment --comment "DNS-TCP"
--A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 5353 -m comment --comment "DNS-TCP"
+-A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT -m comment --comment "DNS-UDP"
+#-A PREROUTING -i eth0 -p udp --dport 53 -j REDIRECT --to-port 5353 -m comment --comment "DNS-UDP"
+-A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT -m comment --comment "DNS-TCP"
+#-A PREROUTING -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 5353 -m comment --comment "DNS-TCP"
 -A PREROUTING -i eth0 -p udp --dport 123 -j REDIRECT -m comment --comment "NTP"
 -A POSTROUTING -o eth0 -p udp --dport 123 -j MASQUERADE -m comment --comment "NTP MASQUERADE"
 COMMIT
@@ -28,45 +28,61 @@ COMMIT
 -A INPUT -j FIREWALL
 
 -A FORWARD -p ipv6 -j ACCEPT
--A FORWARD -o lte0 -d 192.168.8.1 -j ACCEPT
+
+# --- Anti-spoof & sanity checks ---
 -A FORWARD -o lte0 -d 127.0.0.0/8 -j LOGDROP
 -A FORWARD -i lte0 -s 127.0.0.0/8 -j LOGDROP
-# Drop illegal broadcast
 -A FORWARD -o lte0 -d 0.0.0.0/8 -j LOGDROP
 -A FORWARD -o lte0 -d 255.255.255.255 -j LOGDROP
-# Drop invalid private addresses
 -A FORWARD -o lte0 -d 10.0.0.0/8 -j LOGDROP
 -A FORWARD -o lte0 -d 172.16.0.0/12 -j LOGDROP
 -A FORWARD -o lte0 -d 192.168.0.0/16 -j LOGDROP
--A FORWARD -i lte0 -s 192.168.8.1 -j ACCEPT
 -A FORWARD -i lte0 -s 192.168.0.0/16 -j LOGDROP
-# these are legal destinations only, never sources
 -A FORWARD -i lte0 -s 224.0.0.0/4 -j LOGDROP
 
-# Block IoT device access to the internet
--A FORWARD -s 192.168.8.128/25 ! -d 192.168.8.0/24 -m comment --comment "block iot2internet" -j LOGDROP
--A FORWARD ! -s 192.168.8.0/24 -d 192.168.8.128/25 -m comment --comment "block internet2iot" -j LOGDROP
+# --- Allow reachability to and from upstream NAT ---
+-A FORWARD -o lte0 -d 192.168.8.1 -j ACCEPT
+-A FORWARD -i lte0 -s 192.168.8.1 -j ACCEPT
 
+# --- Allow IoT devices to access only the local network ---
+-A FORWARD -s 192.168.8.128/25 ! -d 192.168.8.0/24 -j LOGDROP
+-A FORWARD ! -s 192.168.8.0/24 -d 192.168.8.128/25 -j LOGDROP
+
+# Allow LAN (192.168.8.0/24) to reach remote VPN networks (192.168.0.0/16) via tun0
+-A FORWARD -i eth0 -o tun0 -d 192.168.0.0/16 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+-A FORWARD -i tun0 -s 192.168.0.0/16 -o eth0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# --- General LAN allow ---
 # Iliad accepts no more than 200 parallel TCP connections. Use 10% margin
 #-A FORWARD -p tcp --syn -m connlimit --connlimit-mask 0 --connlimit-above 190 -j LOG --log-prefix "overlimit-rejected: "
 #-A FORWARD -p tcp --syn -m connlimit --connlimit-mask 0 --connlimit-above 190 -j REJECT --reject-with tcp-reset
 -A FORWARD -s 192.168.8.0/24 -j ACCEPT
 
-# Additional firewall rules
--A FORWARD -i lte0 -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j TCP-FW
+# --- Catch-all firewall rules ---
+-A FORWARD -i lte0 -p tcp -m conntrack --ctstate NEW -j TCP-FW
 -A FORWARD -i lte0 -p udp -m conntrack --ctstate NEW -j UDP-FW
 -A FORWARD -j FIREWALL
 
+#
+# FIREWALL rules
+#
 -A FIREWALL -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 -A FIREWALL -m conntrack --ctstate INVALID -j LOGDROP
 -A FIREWALL -p icmp -m conntrack --ctstate NEW -j ACCEPT
+
+# --- TCP sanity checks: drop suspicious flag combinations ---
 -A FIREWALL -p tcp --tcp-flags ALL NONE -j LOGDROP
 -A FIREWALL -p tcp --tcp-flags ALL ALL -j LOGDROP
+-A FIREWALL -p tcp --tcp-flags SYN,FIN SYN,FIN -j LOGDROP
+-A FIREWALL -p tcp --tcp-flags SYN,RST SYN,RST -j LOGDROP
+-A FIREWALL -p tcp --tcp-flags FIN,RST FIN,RST -j LOGDROP
+-A FIREWALL -p tcp --tcp-flags FIN,PSH,URG FIN,PSH,URG -j LOGDROP
 
+# --- Log rejected packets (with rate limiting) ---
 -A FIREWALL -m limit --limit 1/sec -j LOG --log-prefix "firewall-rejected: "
 -A FIREWALL -p udp -j REJECT --reject-with icmp-port-unreachable
 -A FIREWALL -p tcp -j REJECT --reject-with tcp-reset
--A FIREWALL -j REJECT --reject-with icmp-proto-unreachable
+# Anything else is silently dropped by the default rule
 
 # Log packets then drop them
 -A LOGDROP -m limit --limit 1/sec -j LOG --log-prefix "iptables-dropped: "
