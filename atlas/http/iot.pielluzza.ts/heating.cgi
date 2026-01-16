@@ -4,16 +4,21 @@
 #use Modern::Perl;
 use strict;
 use warnings;
+use utf8;
 use feature 'say';
 
 use JSON;
-use utf8;
 use Data::Dumper;
 use Path::Tiny;
+
+use lib '.';
+use RecSQL;
+use Number::Format qw(:subs);
 
 # Load configuration file
 BEGIN { require "./cgi/config.pl"; }
 our $FORWARD_FILE;
+our %LOG_TOPICS;
 
 sub print_header
 {
@@ -42,10 +47,11 @@ sub print_header
 
 sub put_thermostat
 {
-	my ( $heater, $relay ) = @_;
+	my ( $heater, $relay, $curTemp, $lastState ) = @_;
 	say "<details id=\"det-$heater\">";
 	say "<summary>$heater</summary>";
-	say "<p>Status: <ph id=\"stat-$heater\">unknown</ph></p>";
+	say "<p>Current temperature: <ph id=\"cTemp-$heater\">$curTemp</ph> &deg;C</p>";
+	say "<p>Status: <ph id=\"stat-$heater\">$lastState</ph></p>";
 	say "<p>Relay: $relay (status: <ph id=\"rly-$relay\">?</ph>)</p>";
 	say '<p>Temperature <input id="inTemp" type="text" ' .
 		'style="display:inline; width:5em" placeholder="ex. 17.0">';
@@ -85,7 +91,32 @@ foreach (@fw) {
 	my $heater = (split '/', $_->{'decision-topic'})[2];
 	my $relay = (split '/', $_->{'relay-topic'})[2];
 
-	put_thermostat($heater, $relay);
+	# We'd like to retrieve also the last known state and temperature
+	my $sensor_topic =
+		$_->{'decision-topic'} =~ s|heating(.*?)/decision$|sensors$1|r;
+	my $status_topic = $_->{'decision-topic'} =~ s|/(?!.*/).*|/status|r;
+	
+	my $curTemp = undef;
+	my $lastState = undef;
+	
+	if (exists $LOG_TOPICS{$sensor_topic}) {
+		my $dataFile = $LOG_TOPICS{$sensor_topic}->{'short_data'};
+		my $db = RecSQL->from_file($dataFile);
+		my $records = $db->select(['timestamp','temp']);
+		my $most_recent =
+			(sort { $b->{timestamp} <=> $a->{timestamp} } @$records)[0];
+		$curTemp = format_number($most_recent->{temp}, 1, 1);
+	}
+
+	if (exists $LOG_TOPICS{$status_topic}) {
+		my $statusFile = $LOG_TOPICS{$status_topic}->{'short_data'};
+		my $db = RecSQL->from_file($statusFile);
+		my $records = $db->select(['timestamp','target_t','mode']);
+		my $most_recent =
+			(sort { $b->{timestamp} <=> $a->{timestamp} } @$records)[0];
+		$lastState = "$most_recent->{mode} ($most_recent->{target_t} &deg;C)";
+	}
+	put_thermostat($heater, $relay, $curTemp, $lastState);
 }
 
 say '</div>';
