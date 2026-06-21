@@ -62,8 +62,7 @@ next_ts=$(date  --date="$start_yr-$start_mo-$start_day 00:00 UTC +1 month" +%s)
 total_days=$(( (next_ts - start_ts) / 86400 ))        # 28..31 for this cycle
 days_elapsed=$(( (now_ts - start_ts) / 86400 + 1 ))   # incl. today
 
-gb_day=$(echo "scale=4; $total_gb / $total_days" | bc -l)
-target=$(echo "scale=2; $days_elapsed * $gb_day" | bc -l)
+target=$(echo "scale=1; $total_gb * $days_elapsed / $total_days" | bc -l)
 
 echo "<p>Target today: $target GB</p>"
 echo '<p><a href="http://192.168.8.1/html/statistic.html">[Statistics]</a></p>'
