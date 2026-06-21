@@ -1,9 +1,0 @@
-[Match]
-Name=eth0
-
-[Network]
-Address=192.168.8.4/24
-Address=fdae:bed7:cafe:1510::2/64
-DNS=127.0.0.1
-DNS=8.8.8.8
-IPv6AcceptRA=no

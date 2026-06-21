@@ -31,35 +31,41 @@ df -h | \
       awk '/mmcblk0p1/{print "<p>SD card: " $2 "B used: " $3 "B ("$5")</p>"}'
 
 echo '<h2>Internet Connection</h2>'
-gb_day=4 # TODO: compute this value from GB/month and days between renewal
-start_day=23
+start_day=23   # day of month the data cap renews
+total_gb=120   # data cap per billing cycle, in GB
 
-now_day=$(date +%d)
+# "Today" as bare calendar fields (unpadded -> no octal traps in arithmetic)
+now_day=$(date +%-d)
 now_mo=$(date +%-m)
 now_yr=$(date +%Y)
-now_ts=$(date --date="$now_yr-$now_mo-$now_day" +%s) 
 
-if [ $start_day -gt $now_day ]
-then
-	((start_mo=$now_mo-1))
-else
+# Month/year on which the current cycle started
+if [ "$now_day" -ge "$start_day" ]; then
 	start_mo=$now_mo
-fi
-
-if [ $start_mo -eq 0 ]
-then
-	((start_yr=$now_yr-1))
-	start_mo=12
-else
 	start_yr=$now_yr
+else
+	start_mo=$((now_mo - 1))
+	start_yr=$now_yr
+	if [ "$start_mo" -eq 0 ]; then
+		start_mo=12
+		start_yr=$((now_yr - 1))
+	fi
 fi
 
-start_ts=$(date --date="$start_yr-$start_mo-$start_day" +%s) 
-# https://stackoverflow.com/questions/4946785/how-to-find-the-difference-in-days-between-two-dates
-((days_diff=(($now_ts-$start_ts) / (60*60*24)) ))
-echo '<p>Target today: '
-echo "scale=2; ($days_diff+1)*$gb_day" | bc -q
-echo ' GB</p>'
+# Anchor every timestamp to UTC midnight. UTC has no DST, so the second
+# differences stay exact multiples of 86400 and integer division never
+# loses a day across the spring-forward / fall-back transitions.
+start_ts=$(date --date="$start_yr-$start_mo-$start_day 00:00 UTC" +%s)
+now_ts=$(date   --date="$now_yr-$now_mo-$now_day 00:00 UTC"       +%s)
+next_ts=$(date  --date="$start_yr-$start_mo-$start_day 00:00 UTC +1 month" +%s)
+
+total_days=$(( (next_ts - start_ts) / 86400 ))        # 28..31 for this cycle
+days_elapsed=$(( (now_ts - start_ts) / 86400 + 1 ))   # incl. today
+
+gb_day=$(echo "scale=4; $total_gb / $total_days" | bc -l)
+target=$(echo "scale=2; $days_elapsed * $gb_day" | bc -l)
+
+echo "<p>Target today: $target GB</p>"
 echo '<p><a href="http://192.168.8.1/html/statistic.html">[Statistics]</a></p>'
 
 echo '<h2>Network Topology</h2>'
