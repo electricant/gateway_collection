@@ -17,34 +17,38 @@ cat header.html
 # Actual content
 echo '<div class="content-wrapper">'
 
-echo '<h2>Hardware</h2>'
-echo '<h3>Uptime</h3>'
-echo '<p>'$(uptime)'</p>'
-echo '<h3>Memory</h3>'
-free -h | \
-	awk '/Mem/ { print "<p>Total: " $2 "B used: " $3 "B free: " $4 "B</p>" }'
-echo '<h3>CPU</h3>'
-awk '{printf "<p>%3.1f°C", $1/1000}' \
-	/sys/class/thermal/thermal_zone0/temp
-awk '{printf " @ %uMHz</p>\n", $1/1000}' \
-	/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq
-
 echo '<h2>Traffic shaping</h2>'
 echo '<pre style="font-size: 14px; width:600px">'
 echo "* DOWNLOAD (eth0)":
 tc -s qdisc ls dev eth0 | awk '{print "\t",$0;}'
-echo "* UPLOAD (eth1)":
-tc -s qdisc ls dev eth1 | awk '{print "\t",$0;}'
+echo "* UPLOAD (lte0)":
+tc -s qdisc ls dev lte0 | awk '{print "\t",$0;}'
 echo '</pre>'
+echo '</div>'
 
 echo '<h2>Bulk traffic</h2>'
-echo '<iframe class="termsize" src="/cgi/get_logs.sh?bulk"></iframe>'
+echo '<table><tr>'
+echo '<th>Timestamp</th>'
+echo '<th>Source</th>'
+echo '<th>Destination</th>'
+echo '<th>Protocol</th>'
+echo '</tr>'
+journalctl -re | grep bulk | head -n 15 | \
+	perl -n -e '/(\w+ \d+ \d+:\d+:\d+).*SRC=([\d.]+).*DST=([\d.]+).*PROTO=(\w+).*SPT=(\d+).*DPT=(\d+)/g && print "<tr><td>$1</td><td>$2:$5</td><td>$3:$6</td><td>$4</td></tr>"'
+echo '</table>'
 
-echo '<h2>Dropped packets</h2>'
-echo '<iframe class="termsize" src="/cgi/get_logs.sh?dropped"></iframe>'
-
-echo '</div>'
+echo '<h2>Dropped / Rejected traffic</h2>'
+echo '<table><tr>'
+echo '<th>Timestamp</th>'
+echo '<th>Source</th>'
+echo '<th>Destination</th>'
+echo '<th>Protocol</th>'
+echo '</tr>'
+journalctl -re | grep -E "dropped|rejected" | head -n 15 | \
+      perl -n -e '/(\w+ \d+ \d+:\d+:\d+).*SRC=([\d.]+).*DST=([\d.]+).*PROTO=(\w+).*SPT=(\d+).*DPT=(\d+)/g && print "<tr><td>$1</td><td>$2:$5</td><td>$3:$6</td><td>$4</td></tr>"'
+echo '</table>'
 
 # Footer
 echo '</body></html>'
 exit 0
+

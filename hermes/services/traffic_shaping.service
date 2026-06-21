@@ -1,13 +1,12 @@
 [Unit]
-Description=Setup traffic shaping
-Wants=network-online.target
-After=network.target network-online.target
+Description=Traffic shaping script
+After=network-online.target iptables.service
 
 [Service]
-Type=oneshot
+Type=simple
 ExecStart=/home/alarm/traffic_shaping.sh
 RemainAfterExit=yes
+ExecStop=/home/alarm/traffic_shaping.sh stop
 
 [Install]
 WantedBy=multi-user.target
-

@@ -22,3 +22,6 @@ ts=$(printf '%q' $QUERY_STRING | sed -n 's/^.*timestamp=\([^\&]*\).*$/\1/p')
 
 recsel -e "timestamp >= $ts" "$DATA_DIR/$name.rec" | rec2csv \
 	| sed 's/\"//g'
+recsel -e "timestamp >= $ts" "/tmp/$name.rec" | rec2csv \
+	| sed 's/\"//g'
+

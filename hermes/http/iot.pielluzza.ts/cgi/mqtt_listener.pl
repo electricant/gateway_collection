@@ -10,22 +10,31 @@ use Data::Dumper;
 
 # Load configuration file
 BEGIN { require "./config.pl"; }
+our $MQTT_BROKER;
+our %LOG_TOPICS;
+our $FORWARD_FILE;
+our $MQTT_FORWARD_TOPIC;
 
 ###
 # Main
 ###
-my $mqtt = Net::MQTT::Simple->new(MQTT_BROKER);
+$| = 1; # Disable output buffering (for logging purposes)
+
+my $mqtt = Net::MQTT::Simple->new($MQTT_BROKER);
+
+# Subscribe on each topic to be logged according to the config file
+foreach my $topic (keys %LOG_TOPICS)
+{
+	$mqtt->subscribe($topic, \&topic_cb);
+	say "Subscribed to: $topic";
+}
 
 # Setup MQTT listener that runs forever
 # 
 # Dispatch table syntax taken from here:
 # https://stackoverflow.com/questions/7237746/how-do-you-create-a-callback-function-dispatch-table-in-perl-using-hashes
-#
-# MQTT_LOG_TOPIC & MQTT_FORWARD_TOPIC have to be treated like a function in this
-# scenario. See: https://perldoc.perl.org/constant#CAVEATS
 $mqtt->run(
-	MQTT_LOG_TOPIC()     => \&topic_cb,
-	MQTT_FORWARD_TOPIC() => \&forwardMsg,
+	$MQTT_FORWARD_TOPIC => \&forwardMsg,
 );
 
 ###
@@ -83,17 +92,24 @@ sub write_to_recfile
 ###
 sub topic_cb {
 	my($topic, $message) = @_;
+	$message =~ s/\r?\n//g;
 	say "[topic_cb] $topic -> $message";
+
+	# Read configuration for this specific topic
+	#print Dumper($LOG_TOPICS{$topic});
+	my $temp_path = $LOG_TOPICS{$topic}->{'short_data'};
+	my $save_path = $LOG_TOPICS{$topic}->{'long_data'};
+	my $save_interval = $LOG_TOPICS{$topic}->{'save_interval'};
+	#print Dumper([$temp_path, $save_path, $save_interval]);
 	
 	my $decoded = decode_json($message);
 	#print Dumper($decoded);
 	#print Dumper(keys %{$decoded});
 	#print Dumper(values %{$decoded});
 
+	# https://perldoc.perl.org/functions/time
+	# Returns the number of non-leap seconds since whatever time the system considers to be the epoch
 	my $timestamp = time();
-	my $filename =  ($topic =~ m/.*\/(.*)/)[0] . ".rec";
-	my $temp_path = TEMP_DIR . '/' . $filename;
-	my $save_path = SAVE_DIR . '/' . $filename;
 
 	# To allow for different sensors, each with its own capabilities, recfiles
 	# have been used. This gives us a set of tried and tested command line tools
@@ -111,7 +127,7 @@ sub topic_cb {
 
 	# If timestamp delta is greater or equal than SAVE_INTERVAL_MIN then save
 	# the last reading to $save_path and empty $temp_path
-	if (($timestamp - $first_timestamp) >= (SAVE_INTERVAL_MIN * 60))
+	if (($timestamp - $first_timestamp) >= ($save_interval * 60))
 	{
 		truncate($temp_path, 0);
 		write_to_recfile($save_path, $timestamp, %{$decoded});
@@ -139,8 +155,8 @@ sub forwardMsg {
 
 	# Return if the config file does not exist or cannot be read
 	my $fh;
-	if(!open($fh, '<:unix', FORWARD_FILE)) {
-		warn "Could not open " . FORWARD_FILE . ". Forwarding aborted";
+	if(!open($fh, '<:unix', $FORWARD_FILE)) {
+		warn "Could not open " . $FORWARD_FILE . ". Forwarding aborted";
      		return;	     
 	}
 

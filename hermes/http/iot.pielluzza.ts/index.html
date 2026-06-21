@@ -11,13 +11,26 @@
 	<!-- <link href="css/style.css" rel="stylesheet" type="text/css"> -->
 </head><body>
 	<header>
-		<h1 style="font-size:1.75em">Pielluzza IoT Dashboard</h1>
-		<img src="https://wttr.in/Trieste_1q.png" alt="Weather in Trieste" 
-									width="750">
+		<nav>
+			<a href="/" style="font-size: 18px">
+				<img alt="logo" src="favicon.ico" height="18"
+					style="margin:0">
+				Pielluzza IoT Dashboard
+			</a>
+			<ul>
+				<li><a href="/index.html">&#x1F4CA; Dashboard</a></li>
+				<li><a href="/heating.cgi">&#x1F525; Heating</a></li>
+			</ul>
+		</nav>
 	</header>
 	
+	<section>
+		<img src="https://wttr.in/Trieste_1q.png" alt="Weather in Trieste" 
+									width="750">
+	</section>
+
 	<main>
-		<!-- More sections will be added here -->
+		<!-- More sensor sections will be added here -->
 		<section>
 			<header>
 				<h2 id="hStanza" style="font-size:1.25em;">
@@ -44,7 +57,7 @@
 			// https://stackoverflow.com/questions/26653729/insert-no-break-space-by-element-innertext
 			cStr += sensorName + ": (T:\u00a0" + curTemperature + "C";
 			cStr += ",\u00a0H:\u00a0" + curHumidity + "%)</h2>";
-			cStr += "<p><a href=\"/data/" + sensorName + ".csv\">";
+			cStr += "<p><a href=\"/cgi/getcsv.sh?name=" + sensorName + "&timestamp=0\">";
 			cStr += "Get complete raw data as CSV</a></p>";
 			cStr += "</header><div id=\"graphdiv-" + sensorName + "\" ";
 			cStr += "style=\"width:100%;height:200px;max-width:500px\">";

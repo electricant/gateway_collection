@@ -13,14 +13,15 @@ echo "Content-type: application/json; charset=utf-8\n"
 
 # Check for services and save their status in a variable.
 # When $? is 0 then the service is active. Otherwhise it is not active.
-ps -C unbound >/dev/null
+#ps -C unbound >/dev/null
+systemctl is-active --quiet dnsmasq 
 dns_status=$?
 
 systemctl is-active --quiet iptables 
 iptables_status=$?
 
 # The same as above, just for checking internet connectivity
-ping -q -c 1 -W 0.15 scaramuzza.me >/dev/null 2>&1
+ping -q -c 1 -W 0.15 google.com >/dev/null 2>&1
 internet_status=$?
 
 # If the 'tun0' interface exists then, also openVPN is running
