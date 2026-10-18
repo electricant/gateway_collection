@@ -13,6 +13,7 @@ get-all:
 	@$(RSYNC_CMD) \
 		$(HOST_SRC)/home/alarm/traffic_shaping.sh \
 		$(HOST_SRC)/home/alarm/blocklist-update.sh \
+		$(HOST_SRC)/home/alarm/scripts/backupfs.sh \
 		aux_scripts/
 
 	# Getting service files...
