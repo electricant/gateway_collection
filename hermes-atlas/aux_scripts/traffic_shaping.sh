@@ -108,13 +108,10 @@ iptables -t mangle -A TSHAPE -p udp --sport 123 -j NO_SHAPE
 
 # OpenVPN packets do not like to be shaped
 iptables -t mangle -A TSHAPE -p udp --dport 1194 -j NO_SHAPE
+iptables -t mangle -A TSHAPE -p tcp --dport 1194 -j NO_SHAPE
 iptables -t mangle -A TSHAPE -p udp --sport 1194 -j NO_SHAPE
+iptables -t mangle -A TSHAPE -p tcp --sport 1194 -j NO_SHAPE
 iptables -t mangle -A TSHAPE -m owner --uid-owner openvpn -j NO_SHAPE
-
-# TCP control packets that do not carry data contribute to cake rate but are maximum prio
-iptables -t mangle -A TSHAPE -p tcp \
-	--tcp-flags URG,ACK,PSH,RST,SYN,FIN ACK -m length --length 40:64 \
-	-j SET_EF
 
 # Mark VOIP as EF
 iptables -t mangle -A TSHAPE -p udp -m multiport \
@@ -140,21 +137,9 @@ iptables -t mangle -A TSHAPE -p udp --sport 3389 \
 iptables -t mangle -A TSHAPE -p udp --dport 3389 \
 	-j SET_EF -m comment --comment "Windows remote desktop"
 
-# Short HTTP(S) connections are best-effort. Accept them straight away
-iptables -t mangle -A TSHAPE -p tcp -m multiport --dports 80,443 \
-	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
-	--connbytes-dir both -j ACCEPT
-iptables -t mangle -A TSHAPE -p tcp -m multiport --sports 80,443 \
-	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
-	--connbytes-dir both -j ACCEPT
-
-# The same for QUIC traffic used for browsing the web
-iptables -t mangle -A TSHAPE -p udp -m multiport --dports 80,443 \
-	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
-	--connbytes-dir both -j ACCEPT
-iptables -t mangle -A TSHAPE -p udp -m multiport --sports 80,443 \
-	-m connbytes --connbytes 0:$((2*1024*1024)) --connbytes-mode bytes \
-	--connbytes-dir both -j ACCEPT
+# HTTP(S) connections are best-effort. Accept them straight away
+iptables -t mangle -A TSHAPE -p tcp -m multiport --ports 80,443 -j ACCEPT
+iptables -t mangle -A TSHAPE -p udp -m multiport --ports 80,443 -j ACCEPT
 
 # SSH connections should be marked as best effort (if not already marked)
 iptables -t mangle -A TSHAPE -p tcp --dport 22 -j ACCEPT
